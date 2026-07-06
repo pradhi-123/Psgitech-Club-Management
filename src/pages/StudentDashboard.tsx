@@ -622,14 +622,22 @@ const StudentDashboard = () => {
                             )}
                             {registration.attendance_confirmed && (
                               <Button
-                                variant="default"
+                                variant={registration.is_volunteer ? "secondary" : "default"}
                                 size="sm"
-                                className="gap-1.5 w-full sm:w-auto text-xs sm:text-sm"
+                                className={`gap-1.5 w-full sm:w-auto text-xs sm:text-sm ${
+                                  registration.is_volunteer 
+                                    ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600" 
+                                    : ""
+                                }`}
                                 onClick={() => handleDownloadCertificate(registration)}
                               >
                                 <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-                                <span className="hidden sm:inline">Download Certificate</span>
-                                <span className="sm:hidden">Certificate</span>
+                                <span className="hidden sm:inline">
+                                  {registration.is_volunteer ? "Download Volunteer Certificate" : "Download Certificate"}
+                                </span>
+                                <span className="sm:hidden">
+                                  {registration.is_volunteer ? "Volunteer Cert" : "Certificate"}
+                                </span>
                               </Button>
                             )}
                           </div>
