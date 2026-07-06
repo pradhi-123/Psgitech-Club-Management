@@ -1,3 +1,5 @@
+const BASE_URL = import.meta.env.VITE_API_URL || "";
+
 const getHeaders = () => {
   const token = localStorage.getItem("token");
   return {
@@ -8,7 +10,7 @@ const getHeaders = () => {
 
 export const api = {
   get: async (url: string) => {
-    const res = await fetch(url, { headers: getHeaders() });
+    const res = await fetch(`${BASE_URL}${url}`, { headers: getHeaders() });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || "Request failed");
@@ -16,7 +18,7 @@ export const api = {
     return res.json();
   },
   post: async (url: string, body: any) => {
-    const res = await fetch(url, {
+    const res = await fetch(`${BASE_URL}${url}`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(body)
@@ -28,7 +30,7 @@ export const api = {
     return res.json();
   },
   put: async (url: string, body: any) => {
-    const res = await fetch(url, {
+    const res = await fetch(`${BASE_URL}${url}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(body)
@@ -40,7 +42,7 @@ export const api = {
     return res.json();
   },
   delete: async (url: string) => {
-    const res = await fetch(url, {
+    const res = await fetch(`${BASE_URL}${url}`, {
       method: "DELETE",
       headers: getHeaders()
     });
