@@ -163,47 +163,49 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Dynamic Auto-Scrolling Features Marquee */}
-        <div className="marquee-container mt-6">
-          <div className="marquee-inner">
-            {Array(4).fill([
-              {
-                title: "Discover Events",
-                desc: "Seamlessly search and register for technical workshops, cultural meets, and sports events.",
-                icon: <Calendar className="w-6 h-6 text-blue-600" />,
-                bg: "from-blue-500/10 to-cyan-500/10 border-blue-200"
-              },
-              {
-                title: "Achievements Cabinet",
-                desc: "Grow your points, unlock exclusive achievement levels, and build your digital credentials shelf.",
-                icon: <Trophy className="w-6 h-6 text-amber-500" />,
-                bg: "from-amber-500/10 to-orange-500/10 border-amber-200"
-              },
-              {
-                title: "Volunteer Credits",
-                desc: "Serve as a volunteer, earn extra points, and download certified volunteer accolades.",
-                icon: <Award className="w-6 h-6 text-purple-600" />,
-                bg: "from-purple-500/10 to-pink-500/10 border-purple-200"
-              },
-              {
-                title: "Verifiable PDFs",
-                desc: "Get instant downloads of premium signature-verified landscape certificates for your records.",
-                icon: <GraduationCap className="w-6 h-6 text-emerald-600" />,
-                bg: "from-emerald-500/10 to-teal-500/10 border-emerald-200"
-              }
-            ]).flat().map((item, idx) => (
-              <div
-                key={idx}
-                className="marquee-card text-left"
-              >
-                <div className={`p-3 rounded-2xl w-fit mb-4 bg-gradient-to-tr ${item.bg} border`}>
-                  {item.icon}
-                </div>
-                <h3 className="font-bold text-lg text-slate-800 mb-2">{item.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{item.desc}</p>
+        {/* Glassmorphic 2x2 Grid of Glowing Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full mx-auto mt-8 px-4">
+          {[
+            {
+              title: "Discover Events",
+              desc: "Seamlessly search and register for technical workshops, cultural meets, and sports events.",
+              icon: <Calendar className="w-6 h-6 text-blue-600 transition-transform duration-300 group-hover:scale-110" />,
+              bg: "from-blue-500/10 to-cyan-500/10 border-blue-200",
+              hoverGlow: "hover:shadow-[0_20px_40px_rgba(59,130,246,0.18)] hover:border-blue-400/60"
+            },
+            {
+              title: "Achievements Cabinet",
+              desc: "Grow your points, unlock exclusive achievement levels, and build your digital credentials shelf.",
+              icon: <Trophy className="w-6 h-6 text-amber-500 transition-transform duration-300 group-hover:scale-110" />,
+              bg: "from-amber-500/10 to-orange-500/10 border-amber-200",
+              hoverGlow: "hover:shadow-[0_20px_40px_rgba(245,158,11,0.18)] hover:border-amber-400/60"
+            },
+            {
+              title: "Volunteer Credits",
+              desc: "Serve as a volunteer, earn extra points, and download certified volunteer accolades.",
+              icon: <Award className="w-6 h-6 text-purple-600 transition-transform duration-300 group-hover:scale-110" />,
+              bg: "from-purple-500/10 to-pink-500/10 border-purple-200",
+              hoverGlow: "hover:shadow-[0_20px_40px_rgba(168,85,247,0.18)] hover:border-purple-400/60"
+            },
+            {
+              title: "Verifiable PDFs",
+              desc: "Get instant downloads of premium signature-verified landscape certificates for your records.",
+              icon: <GraduationCap className="w-6 h-6 text-emerald-600 transition-transform duration-300 group-hover:scale-110" />,
+              bg: "from-emerald-500/10 to-teal-500/10 border-emerald-200",
+              hoverGlow: "hover:shadow-[0_20px_40px_rgba(16,185,129,0.18)] hover:border-emerald-400/60"
+            }
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              className={`group bg-white/70 border border-white/85 backdrop-blur-md rounded-3xl p-8 text-left shadow-[0_4px_20px_rgba(99,102,241,0.03)] hover:-translate-y-2 hover:scale-[1.01] transition-all duration-300 ${item.hoverGlow}`}
+            >
+              <div className={`p-3 rounded-2xl w-fit mb-5 bg-gradient-to-tr ${item.bg} border`}>
+                {item.icon}
               </div>
-            ))}
-          </div>
+              <h3 className="font-bold text-xl text-slate-800 mb-2 transition-colors duration-300 group-hover:text-slate-900">{item.title}</h3>
+              <p className="text-slate-500 text-sm sm:text-base leading-relaxed">{item.desc}</p>
+            </div>
+          ))}
         </div>
       </main>
 
