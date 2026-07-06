@@ -297,7 +297,11 @@ const AdminDashboard = () => {
   };
 
   const handleEditUser = (user: any) => {
-    setEditingUser(user);
+    const fallbackPassword = user.plain_password || (user.role === "student" ? user.roll_number : "astro123");
+    setEditingUser({
+      ...user,
+      plain_password: fallbackPassword,
+    });
   };
 
   const handleUpdateUser = async () => {
@@ -1139,6 +1143,27 @@ const AdminDashboard = () => {
                         <SelectItem value="4">4th Year</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Password</Label>
+                    <div className="relative">
+                      <Input
+                        type={showEditPassword ? "text" : "password"}
+                        value={editingUser.plain_password || ""}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setEditingUser({ ...editingUser, plain_password: e.target.value })
+                        }
+                        placeholder="Enter password"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowEditPassword(!showEditPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                      >
+                        {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
