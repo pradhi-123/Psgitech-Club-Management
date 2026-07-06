@@ -141,7 +141,15 @@ const AdminDashboard = () => {
     setSelectedClubToEdit(club);
     setEditClubForm({ name: club.name || "", description: club.description || "" });
     setEditClubCoordinators(club.coordinators && club.coordinators.length > 0 
-      ? club.coordinators.map((c: any) => ({ name: c.name || "", phone: c.phone || "", email: c.email || "", password: "" }))
+      ? club.coordinators.map((c: any) => {
+          const coordUser = coordinators.find(user => user.email?.toLowerCase() === c.email?.toLowerCase());
+          return {
+            name: c.name || "",
+            phone: c.phone || "",
+            email: c.email || "",
+            password: coordUser?.plain_password || "astro123"
+          };
+        })
       : [{ name: "", phone: "", email: "", password: "" }]
     );
     setIsEditClubDialogOpen(true);
@@ -1309,7 +1317,7 @@ const AdminDashboard = () => {
                             type={visibleEditPasswords[index] ? "text" : "password"}
                             value={coord.password || ""}
                             onChange={(e) => handleEditCoordinatorChange(index, 'password', e.target.value)}
-                            placeholder="Leave blank to keep unchanged"
+                            placeholder="Enter password"
                             className="h-8 text-xs pr-8"
                           />
                           <button
