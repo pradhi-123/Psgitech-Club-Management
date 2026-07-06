@@ -653,7 +653,7 @@ const ManageEvent = () => {
             <Button variant="ghost" onClick={() => setShowScanner(false)} className="text-white hover:bg-white/10">Close</Button>
           </div>
           <div className="flex-1 flex items-center justify-center max-h-[70vh]">
-            <QRScanner onScan={handleQRScan} />
+            <QRScanner onScan={handleQRScan} onClose={() => setShowScanner(false)} />
           </div>
           <div className="text-center text-white py-4 text-sm bg-black/50 rounded-lg">
             Position the student's entry or exit QR code within the frame to scan.
