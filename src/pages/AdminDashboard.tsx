@@ -973,7 +973,7 @@ const AdminDashboard = () => {
                             type={visibleEditPasswords[index] ? "text" : "password"}
                             value={coord.password || ""}
                             onChange={(e) => handleEditCoordinatorChange(index, 'password', e.target.value)}
-                            placeholder="Password"
+                            placeholder="Leave blank to keep unchanged"
                             className="h-8 text-xs pr-8"
                           />
                           <button
