@@ -117,4 +117,17 @@ router.put('/edit/:clubId', authenticateToken, requireAdmin, async (req, res) =>
   }
 });
 
+// DELETE /api/clubs/:clubId (Delete club - Admin only)
+router.delete('/:clubId', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const club = await Club.findByIdAndDelete(req.params.clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+    res.json({ message: 'Club deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Server error deleting club' });
+  }
+});
+
 export default router;

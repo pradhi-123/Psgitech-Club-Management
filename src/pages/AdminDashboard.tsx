@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/apiClient";
-import { LogOut, Plus, Users, Calendar, Award, Pencil, Trash2, User, Phone, Mail, Trash } from "lucide-react";
+import { LogOut, Plus, Users, Calendar, Award, Pencil, Trash2, User, Phone, Mail, Trash, Eye, EyeOff } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,8 @@ const AdminDashboard = () => {
   const [selectedClubToEdit, setSelectedClubToEdit] = useState<any>(null);
   const [editClubForm, setEditClubForm] = useState({ name: "", description: "" });
   const [editClubCoordinators, setEditClubCoordinators] = useState([{ name: "", phone: "", email: "", password: "" }]);
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
+  const [visibleEditPasswords, setVisibleEditPasswords] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (!loading && (!profile || profile.role !== "admin")) {
@@ -166,10 +168,22 @@ const AdminDashboard = () => {
       
       toast.success("Club added successfully!");
       setClubForm({ name: "", description: "" });
-      setClubCoordinators([{ name: "", phone: "", email: "" }]);
+      setClubCoordinators([{ name: "", phone: "", email: "", password: "" }]);
+      setVisiblePasswords({});
       fetchData();
     } catch (error: any) {
       toast.error("Failed to add club: " + error.message);
+    }
+  };
+
+  const handleDeleteClub = async (clubId: string) => {
+    if (!window.confirm("Are you sure you want to delete this club? This action cannot be undone.")) return;
+    try {
+      await api.delete(`/api/clubs/${clubId}`);
+      toast.success("Club deleted successfully!");
+      fetchData();
+    } catch (error: any) {
+      toast.error("Failed to delete club: " + error.message);
     }
   };
 
@@ -438,13 +452,22 @@ const AdminDashboard = () => {
                                   </div>
                                   <div className="space-y-1">
                                     <Label className="text-xs">Password</Label>
-                                    <Input
-                                      type="password"
-                                      value={coord.password || ""}
-                                      onChange={(e) => handleCoordinatorChange(index, 'password', e.target.value)}
-                                      placeholder="Password"
-                                      className="h-8 text-xs"
-                                    />
+                                    <div className="relative">
+                                      <Input
+                                        type={visiblePasswords[index] ? "text" : "password"}
+                                        value={coord.password || ""}
+                                        onChange={(e) => handleCoordinatorChange(index, 'password', e.target.value)}
+                                        placeholder="Password"
+                                        className="h-8 text-xs pr-8"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => setVisiblePasswords({ ...visiblePasswords, [index]: !visiblePasswords[index] })}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                                      >
+                                        {visiblePasswords[index] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -469,9 +492,14 @@ const AdminDashboard = () => {
                             <CardTitle className="text-lg truncate">{club.name}</CardTitle>
                             {club.description && <CardDescription className="mt-1.5 text-xs sm:text-sm line-clamp-3">{club.description}</CardDescription>}
                           </div>
-                          <Button variant="outline" size="sm" onClick={() => handleStartEditClub(club)} className="text-xs h-8 shrink-0">
-                            Edit
-                          </Button>
+                          <div className="flex gap-1.5 shrink-0">
+                            <Button variant="outline" size="icon" onClick={() => handleStartEditClub(club)} className="h-8 w-8" title="Edit Club">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button variant="destructive" size="icon" onClick={() => handleDeleteClub(club.id)} className="h-8 w-8" title="Delete Club">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         </div>
                       </CardHeader>
                       {club.coordinators && club.coordinators.length > 0 && (
@@ -940,13 +968,22 @@ const AdminDashboard = () => {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Password</Label>
-                        <Input
-                          type="password"
-                          value={coord.password || ""}
-                          onChange={(e) => handleEditCoordinatorChange(index, 'password', e.target.value)}
-                          placeholder="Password"
-                          className="h-8 text-xs"
-                        />
+                        <div className="relative">
+                          <Input
+                            type={visibleEditPasswords[index] ? "text" : "password"}
+                            value={coord.password || ""}
+                            onChange={(e) => handleEditCoordinatorChange(index, 'password', e.target.value)}
+                            placeholder="Password"
+                            className="h-8 text-xs pr-8"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setVisibleEditPasswords({ ...visibleEditPasswords, [index]: !visibleEditPasswords[index] })}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                          >
+                            {visibleEditPasswords[index] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
