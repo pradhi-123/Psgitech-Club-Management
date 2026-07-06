@@ -1,5 +1,6 @@
 import express from 'express';
-import { Club } from '../models.js';
+import bcrypt from 'bcryptjs';
+import { Club, User } from '../models.js';
 import { authenticateToken } from './auth.js';
 
 const router = express.Router();
@@ -44,6 +45,26 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       coordinators: coordinators || []
     });
 
+    // Create User documents for coordinators if password is provided and email doesn't exist
+    if (coordinators && coordinators.length > 0) {
+      for (const coord of coordinators) {
+        if (coord.email && coord.password) {
+          const existingUser = await User.findOne({ email: coord.email.toLowerCase().trim() });
+          if (!existingUser) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(coord.password, salt);
+            await User.create({
+              email: coord.email.toLowerCase().trim(),
+              password: hashedPassword,
+              full_name: coord.name,
+              role: 'coordinator',
+              club_id: newClub._id
+            });
+          }
+        }
+      }
+    }
+
     res.status(201).json({
       message: 'Club created successfully',
       id: newClub._id
@@ -69,6 +90,27 @@ router.put('/edit/:clubId', authenticateToken, requireAdmin, async (req, res) =>
     club.updated_at = new Date();
 
     await club.save();
+
+    // Create User documents for any new coordinators if password is provided
+    if (coordinators && coordinators.length > 0) {
+      for (const coord of coordinators) {
+        if (coord.email && coord.password) {
+          const existingUser = await User.findOne({ email: coord.email.toLowerCase().trim() });
+          if (!existingUser) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(coord.password, salt);
+            await User.create({
+              email: coord.email.toLowerCase().trim(),
+              password: hashedPassword,
+              full_name: coord.name,
+              role: 'coordinator',
+              club_id: club._id
+            });
+          }
+        }
+      }
+    }
+
     res.json({ message: 'Club updated successfully', id: club._id });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Server error updating club' });

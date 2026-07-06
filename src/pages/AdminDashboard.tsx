@@ -34,7 +34,7 @@ const AdminDashboard = () => {
 
   // Form states
   const [clubForm, setClubForm] = useState({ name: "", description: "" });
-  const [clubCoordinators, setClubCoordinators] = useState([{ name: "", phone: "", email: "" }]);
+  const [clubCoordinators, setClubCoordinators] = useState([{ name: "", phone: "", email: "", password: "" }]);
   const [coordinatorForm, setCoordinatorForm] = useState({
     full_name: "",
     email: "",
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
   const [isEditClubDialogOpen, setIsEditClubDialogOpen] = useState(false);
   const [selectedClubToEdit, setSelectedClubToEdit] = useState<any>(null);
   const [editClubForm, setEditClubForm] = useState({ name: "", description: "" });
-  const [editClubCoordinators, setEditClubCoordinators] = useState([{ name: "", phone: "", email: "" }]);
+  const [editClubCoordinators, setEditClubCoordinators] = useState([{ name: "", phone: "", email: "", password: "" }]);
 
   useEffect(() => {
     if (!loading && (!profile || profile.role !== "admin")) {
@@ -89,7 +89,7 @@ const AdminDashboard = () => {
   };
 
   const handleAddCoordinatorRow = () => {
-    setClubCoordinators([...clubCoordinators, { name: "", phone: "", email: "" }]);
+    setClubCoordinators([...clubCoordinators, { name: "", phone: "", email: "", password: "" }]);
   };
 
   const handleRemoveCoordinatorRow = (index: number) => {
@@ -103,7 +103,7 @@ const AdminDashboard = () => {
   };
 
   const handleEditAddCoordinatorRow = () => {
-    setEditClubCoordinators([...editClubCoordinators, { name: "", phone: "", email: "" }]);
+    setEditClubCoordinators([...editClubCoordinators, { name: "", phone: "", email: "", password: "" }]);
   };
 
   const handleEditRemoveCoordinatorRow = (index: number) => {
@@ -122,8 +122,8 @@ const AdminDashboard = () => {
     setSelectedClubToEdit(club);
     setEditClubForm({ name: club.name || "", description: club.description || "" });
     setEditClubCoordinators(club.coordinators && club.coordinators.length > 0 
-      ? club.coordinators.map((c: any) => ({ name: c.name || "", phone: c.phone || "", email: c.email || "" }))
-      : [{ name: "", phone: "", email: "" }]
+      ? club.coordinators.map((c: any) => ({ name: c.name || "", phone: c.phone || "", email: c.email || "", password: "" }))
+      : [{ name: "", phone: "", email: "", password: "" }]
     );
     setIsEditClubDialogOpen(true);
   };
@@ -417,13 +417,13 @@ const AdminDashboard = () => {
                                     className="h-8 text-xs"
                                   />
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-3 gap-2">
                                   <div className="space-y-1">
                                     <Label className="text-xs">Phone</Label>
                                     <Input
                                       value={coord.phone}
                                       onChange={(e) => handleCoordinatorChange(index, 'phone', e.target.value)}
-                                      placeholder="Phone number"
+                                      placeholder="Phone"
                                       className="h-8 text-xs"
                                     />
                                   </div>
@@ -432,7 +432,17 @@ const AdminDashboard = () => {
                                     <Input
                                       value={coord.email}
                                       onChange={(e) => handleCoordinatorChange(index, 'email', e.target.value)}
-                                      placeholder="Email address"
+                                      placeholder="Email"
+                                      className="h-8 text-xs"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Password</Label>
+                                    <Input
+                                      type="password"
+                                      value={coord.password || ""}
+                                      onChange={(e) => handleCoordinatorChange(index, 'password', e.target.value)}
+                                      placeholder="Password"
                                       className="h-8 text-xs"
                                     />
                                   </div>
@@ -909,13 +919,13 @@ const AdminDashboard = () => {
                         className="h-8 text-xs"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <div className="space-y-1">
                         <Label className="text-xs">Phone</Label>
                         <Input
                           value={coord.phone}
                           onChange={(e) => handleEditCoordinatorChange(index, 'phone', e.target.value)}
-                          placeholder="Phone number"
+                          placeholder="Phone"
                           className="h-8 text-xs"
                         />
                       </div>
@@ -924,7 +934,17 @@ const AdminDashboard = () => {
                         <Input
                           value={coord.email}
                           onChange={(e) => handleEditCoordinatorChange(index, 'email', e.target.value)}
-                          placeholder="Email address"
+                          placeholder="Email"
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Password</Label>
+                        <Input
+                          type="password"
+                          value={coord.password || ""}
+                          onChange={(e) => handleEditCoordinatorChange(index, 'password', e.target.value)}
+                          placeholder="Password"
                           className="h-8 text-xs"
                         />
                       </div>
