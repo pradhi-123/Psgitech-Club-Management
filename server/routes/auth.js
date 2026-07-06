@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { User, StudentCredits } from '../models.js';
+import { User, StudentCredits, Club } from '../models.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'psgitech_secret_key_12345';
@@ -137,7 +137,7 @@ router.get('/users/students', authenticateToken, requireAdmin, async (req, res) 
 
 // POST /api/users (Create a new user - Admin functionality replacing 'create-user' Edge Function)
 router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
-  const { email, password, full_name, role, roll_number, department, section, year } = req.body;
+  const { email, password, full_name, role, roll_number, department, section, year, club_id } = req.body;
 
   try {
     // Check if user already exists
@@ -177,6 +177,22 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
         events_attended: 0,
         badges_earned: 0
       });
+    }
+
+    // If coordinator and club_id is provided, automatically add them to the club's coordinators list
+    if (role === 'coordinator' && club_id) {
+      const club = await Club.findById(club_id);
+      if (club) {
+        const exists = club.coordinators?.some(c => c.email?.toLowerCase() === email.toLowerCase().trim());
+        if (!exists) {
+          club.coordinators = club.coordinators || [];
+          club.coordinators.push({
+            name: full_name,
+            email: email.toLowerCase().trim()
+          });
+          await club.save();
+        }
+      }
     }
 
     res.status(201).json({ message: 'User created successfully', id: newUser._id });
