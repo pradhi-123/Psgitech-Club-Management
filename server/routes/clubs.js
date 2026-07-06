@@ -59,9 +59,10 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
             const newUser = await User.create({
               email: coord.email.toLowerCase().trim(),
               password: hashedPassword,
+              plain_password: coord.password,
               full_name: coord.name,
               role: 'coordinator',
-              club_id: newClub._id
+              phone: coord.phone || ''
             });
             console.log('[CREATE CLUB] Created User account:', newUser._id);
           }
@@ -100,20 +101,34 @@ router.put('/edit/:clubId', authenticateToken, requireAdmin, async (req, res) =>
     if (coordinators && coordinators.length > 0) {
       for (const coord of coordinators) {
         console.log('[EDIT CLUB] Checking coordinator:', coord.email, 'has password:', !!coord.password);
-        if (coord.email && coord.password) {
+        if (coord.email) {
           const existingUser = await User.findOne({ email: coord.email.toLowerCase().trim() });
           console.log('[EDIT CLUB] Existing user check:', coord.email, 'found:', !!existingUser);
           if (!existingUser) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(coord.password, salt);
-            const newUser = await User.create({
-              email: coord.email.toLowerCase().trim(),
-              password: hashedPassword,
-              full_name: coord.name,
-              role: 'coordinator',
-              club_id: club._id
-            });
-            console.log('[EDIT CLUB] Created User account:', newUser._id);
+            if (coord.password) {
+              const salt = await bcrypt.genSalt(10);
+              const hashedPassword = await bcrypt.hash(coord.password, salt);
+              const newUser = await User.create({
+                email: coord.email.toLowerCase().trim(),
+                password: hashedPassword,
+                plain_password: coord.password,
+                full_name: coord.name,
+                role: 'coordinator',
+                phone: coord.phone || ''
+              });
+              console.log('[EDIT CLUB] Created User account:', newUser._id);
+            }
+          } else {
+            // Update existing user properties
+            existingUser.full_name = coord.name || existingUser.full_name;
+            existingUser.phone = coord.phone !== undefined ? coord.phone : existingUser.phone;
+            if (coord.password && coord.password.trim() !== '') {
+              const salt = await bcrypt.genSalt(10);
+              existingUser.password = await bcrypt.hash(coord.password, salt);
+              existingUser.plain_password = coord.password;
+            }
+            await existingUser.save();
+            console.log('[EDIT CLUB] Updated existing User account:', existingUser._id);
           }
         }
       }
