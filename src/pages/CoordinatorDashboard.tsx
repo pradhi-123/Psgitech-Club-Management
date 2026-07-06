@@ -119,7 +119,7 @@ const CoordinatorDashboard = () => {
         api.get("/api/events/coordinator"),
         api.get("/api/events"),
         api.get("/api/events/my-registrations"),
-        api.get("/api/students/credits")
+        api.get("/api/events/students/credits")
       ]);
 
       // Filter clubs where this coordinator's email matches one of the coordinators
