@@ -64,6 +64,7 @@ const AdminDashboard = () => {
   const [isAddClubOpen, setIsAddClubOpen] = useState(false);
   const [isAddCoordinatorOpen, setIsAddCoordinatorOpen] = useState(false);
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
   
   // Search, Filter, Sort States
   const [clubsSearch, setClubsSearch] = useState("");
@@ -310,6 +311,8 @@ const AdminDashboard = () => {
         department: editingUser.department,
         section: editingUser.section,
         year: editingUser.year,
+        phone: editingUser.phone,
+        password: editingUser.plain_password,
       });
 
       toast.success("User updated successfully!");
@@ -1139,6 +1142,43 @@ const AdminDashboard = () => {
                   </div>
                 </>
               )}
+
+              {editingUser.role === "coordinator" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Phone Number</Label>
+                    <Input
+                      value={editingUser.phone || ""}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setEditingUser({ ...editingUser, phone: e.target.value })
+                      }
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Password</Label>
+                    <div className="relative">
+                      <Input
+                        type={showEditPassword ? "text" : "password"}
+                        value={editingUser.plain_password || ""}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setEditingUser({ ...editingUser, plain_password: e.target.value })
+                        }
+                        placeholder="Enter password"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowEditPassword(!showEditPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                      >
+                        {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <Button onClick={handleUpdateUser} className="w-full">
                 Update User
               </Button>

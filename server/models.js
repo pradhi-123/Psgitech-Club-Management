@@ -5,10 +5,12 @@ const UserSchema = new mongoose.Schema({
   full_name: { type: String, required: true },
   email: { type: String, unique: true, sparse: true },
   password: { type: String, required: true },
+  plain_password: { type: String },
   roll_number: { type: String, unique: true, sparse: true },
   department: String,
   section: String,
   year: Number,
+  phone: String,
   created_at: { type: Date, default: Date.now }
 });
 

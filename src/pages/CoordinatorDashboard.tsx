@@ -202,14 +202,16 @@ const CoordinatorDashboard = () => {
   };
 
   const handleExportMyEventsCSV = () => {
-    const headers = ["Event Name", "Club Name", "Category", "Date", "Duration (mins)", "Max Participants"];
+    const headers = ["Event Name", "Club Name", "Category", "Date", "Duration (mins)", "Max Participants", "Registrations", "Attended"];
     const rows = myEvents.map(e => [
       `"${e.name.replace(/"/g, '""')}"`,
       `"${(e.clubs?.name || '').replace(/"/g, '""')}"`,
       `"${e.category || ''}"`,
       new Date(e.event_date).toISOString().split('T')[0],
       e.duration,
-      e.max_participants || "Unlimited"
+      e.max_participants || "Unlimited",
+      e.registered_count || 0,
+      e.attended_count || 0
     ]);
     
     const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");

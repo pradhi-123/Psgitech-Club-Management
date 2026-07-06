@@ -116,6 +116,7 @@ router.get('/users/coordinators', authenticateToken, requireAdmin, async (req, r
         email: c.email,
         phone: c.phone || '',
         role: c.role,
+        plain_password: c.plain_password || '',
         club_name: assignedClub ? assignedClub.name : 'Unassigned',
         club_id: assignedClub ? assignedClub._id : null
       };
@@ -137,7 +138,8 @@ router.get('/users/students', authenticateToken, requireAdmin, async (req, res) 
       roll_number: s.roll_number,
       department: s.department,
       section: s.section,
-      year: s.year
+      year: s.year,
+      plain_password: s.plain_password || ''
     })));
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -170,6 +172,7 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
     const newUser = await User.create({
       email: email.toLowerCase().trim(),
       password: hashedPassword,
+      plain_password: password,
       full_name,
       role,
       roll_number: roll_number ? roll_number.trim() : undefined,
@@ -214,7 +217,7 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
 
 // PUT /api/users/:id (Update user - Admin functionality)
 router.put('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
-  const { full_name, email, roll_number, department, section, year } = req.body;
+  const { full_name, email, roll_number, department, section, year, phone, password } = req.body;
 
   try {
     const user = await User.findById(req.params.id);
@@ -226,6 +229,13 @@ router.put('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
     user.department = department || user.department;
     user.section = section || user.section;
     user.year = year !== undefined ? year : user.year;
+    user.phone = phone !== undefined ? phone.trim() : user.phone;
+
+    if (password !== undefined && password.trim() !== '') {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password.trim(), salt);
+      user.plain_password = password.trim();
+    }
 
     await user.save();
     res.json({ message: 'User updated successfully' });
