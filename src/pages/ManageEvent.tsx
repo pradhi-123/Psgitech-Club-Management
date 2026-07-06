@@ -613,16 +613,7 @@ const ManageEvent = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="edit-bonus-points">Bonus Points</Label>
-                        <Input
-                          id="edit-bonus-points"
-                          type="number"
-                          value={editForm.bonus_points}
-                          onChange={(e) => setEditForm({ ...editForm, bonus_points: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="edit-volunteer-points">Volunteer Credits</Label>
                         <Input

@@ -653,16 +653,7 @@ const CoordinatorDashboard = () => {
                               />
                             </div>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                              <Label htmlFor="bonus-points">Bonus Points</Label>
-                              <Input
-                                id="bonus-points"
-                                type="number"
-                                value={eventForm.bonus_points}
-                                onChange={(e) => setEventForm({ ...eventForm, bonus_points: parseInt(e.target.value) || 0 })}
-                              />
-                            </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <Label htmlFor="volunteer-points">Volunteer Credits</Label>
                               <Input

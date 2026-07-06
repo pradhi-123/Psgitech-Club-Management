@@ -58,25 +58,33 @@ router.get('/coordinator', authenticateToken, requireStaff, async (req, res) => 
       .populate('club_id')
       .sort({ event_date: -1 });
 
-    res.json(events.map(e => ({
-      id: e._id,
-      name: e.name,
-      category: e.category,
-      description: e.description,
-      event_date: e.event_date.toISOString(),
-      duration: e.duration,
-      max_participants: e.max_participants,
-      credit_points: e.credit_points,
-      bonus_points: e.bonus_points,
-      volunteer_points: e.volunteer_points || 3, // mapped
-      volunteers: e.volunteers,
-      club_id: e.club_id?._id,
-      coordinator_id: e.coordinator_id,
-      created_at: e.created_at,
-      clubs: e.club_id ? { name: e.club_id.name, coordinators: e.club_id.coordinators || [] } : null
-    })));
+    const eventsWithCounts = await Promise.all(events.map(async (e) => {
+      const registered = await EventRegistration.countDocuments({ event_id: e._id });
+      const attended = await EventRegistration.countDocuments({ event_id: e._id, attendance_confirmed: true });
+      return {
+        id: e._id,
+        name: e.name,
+        category: e.category,
+        description: e.description,
+        event_date: e.event_date.toISOString(),
+        duration: e.duration,
+        max_participants: e.max_participants,
+        credit_points: e.credit_points,
+        bonus_points: e.bonus_points,
+        volunteer_points: e.volunteer_points || 3,
+        volunteers: e.volunteers,
+        club_id: e.club_id?._id,
+        coordinator_id: e.coordinator_id,
+        created_at: e.created_at,
+        clubs: e.club_id ? { name: e.club_id.name, coordinators: e.club_id.coordinators || [] } : null,
+        registered_count: registered,
+        attended_count: attended
+      };
+    }));
+
+    res.json(eventsWithCounts);
   } catch (error) {
-    res.status(500).json({ message: 'Server error fetching coordinator events' });
+    res.status(500).json({ message: 'Server error fetching coordinator events: ' + error.message });
   }
 });
 
