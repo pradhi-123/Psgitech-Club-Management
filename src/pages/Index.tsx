@@ -82,43 +82,94 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Right column: Highlights Grid */}
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg w-full">
+        {/* Right column: Highlights Grid (3D Flash Cards) */}
+        <style>{`
+          .flashcard-container {
+            perspective: 1000px;
+            height: 190px;
+          }
+          .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+          }
+          .flashcard-container:hover .flashcard-inner {
+            transform: rotateY(180deg);
+          }
+          .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s ease;
+          }
+          .flashcard-front {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+          }
+          .flashcard-back {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: white;
+            transform: rotateY(180deg);
+          }
+        `}</style>
+
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-lg w-full">
           {[
             {
               title: "Discover Events",
               desc: "Seamlessly search and register for technical workshops, cultural meets, and sports events.",
-              icon: <Calendar className="w-6 h-6 text-primary" />,
-              border: "hover:border-primary/30"
+              icon: <Calendar className="w-6 h-6 text-blue-600" />,
+              backIcon: <Calendar className="w-8 h-8 text-blue-200 mb-2" />
             },
             {
               title: "Achievements Cabinet",
               desc: "Grow your points, unlock exclusive achievement levels, and build your digital credentials shelf.",
               icon: <Trophy className="w-6 h-6 text-amber-500" />,
-              border: "hover:border-amber-500/30"
+              backIcon: <Trophy className="w-8 h-8 text-amber-200 mb-2" />
             },
             {
               title: "Volunteer Credits",
               desc: "Serve as a volunteer, earn extra points, and download certified volunteer accolades.",
               icon: <Award className="w-6 h-6 text-purple-600" />,
-              border: "hover:border-purple-500/30"
+              backIcon: <Award className="w-8 h-8 text-purple-200 mb-2" />
             },
             {
               title: "Verifiable PDFs",
               desc: "Get instant downloads of premium signature-verified landscape certificates for your records.",
               icon: <GraduationCap className="w-6 h-6 text-emerald-600" />,
-              border: "hover:border-emerald-500/30"
+              backIcon: <GraduationCap className="w-8 h-8 text-emerald-200 mb-2" />
             }
           ].map((item, idx) => (
-            <div 
-              key={idx} 
-              className={`p-6 rounded-2xl bg-white/70 border border-slate-200/60 backdrop-blur-md transition-all duration-300 hover:bg-white hover:scale-[1.02] shadow-sm hover:shadow-md ${item.border}`}
-            >
-              <div className="bg-slate-50 p-3 rounded-xl w-fit mb-4 border border-slate-100">
-                {item.icon}
+            <div key={idx} className="flashcard-container">
+              <div className="flashcard-inner">
+                {/* Front Side */}
+                <div className="flashcard-front">
+                  <div className="bg-slate-50 p-3 rounded-2xl w-fit mb-4 border border-slate-100/80">
+                    {item.icon}
+                  </div>
+                  <h3 className="font-bold text-lg text-slate-800 mb-1">{item.title}</h3>
+                  <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mt-1 animate-pulse">Hover to reveal details</span>
+                </div>
+                {/* Back Side */}
+                <div className="flashcard-back">
+                  {item.backIcon}
+                  <h3 className="font-bold text-base mb-1.5 text-white/95">{item.title}</h3>
+                  <p className="text-white/80 text-xs leading-relaxed text-center">{item.desc}</p>
+                </div>
               </div>
-              <h3 className="font-bold text-lg text-slate-800 mb-2">{item.title}</h3>
-              <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>

@@ -60,12 +60,12 @@ const Login = () => {
         <ArrowLeft className="w-4 h-4" /> Back to Home
       </Button>
 
-      <Card className="w-full max-w-md bg-white/75 border border-white/50 backdrop-blur-md shadow-2xl relative z-10 text-slate-900 rounded-2xl overflow-hidden">
+      <Card className="w-full max-w-md bg-white/80 border border-white/60 backdrop-blur-xl shadow-2xl relative z-10 text-slate-900 rounded-3xl overflow-hidden hover:shadow-primary/5 transition-all duration-500 hover:scale-[1.005]">
         <CardHeader className="text-center space-y-2 pb-6 border-b border-slate-100">
-          <div className="mx-auto mb-2 p-1.5 bg-slate-100/50 border border-slate-200/50 rounded-2xl w-fit">
+          <div className="mx-auto mb-2 p-2 bg-white/90 border border-slate-200/50 rounded-2xl w-fit shadow-sm">
             <img src={collegeLogo} alt="PSG Institute Logo" className="h-16 w-auto mx-auto object-contain" />
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent font-semibold">
+          <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             PSG iTech Campus Portal
           </CardTitle>
           <CardDescription className="text-slate-500 text-xs sm:text-sm">Enter your credentials below to log in</CardDescription>
