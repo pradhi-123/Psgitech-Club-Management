@@ -151,7 +151,7 @@ router.post('/volunteers/confirm', authenticateToken, requireStaff, async (req, 
   }
 
   try {
-    const student = await User.findOne({ roll_number: rollNumber.trim() });
+    const student = await User.findOne({ roll_number: { $regex: new RegExp('^' + rollNumber.trim() + '$', 'i') } });
     if (!student) {
       return res.status(404).json({ message: `Student with roll number ${rollNumber} not found` });
     }

@@ -57,6 +57,12 @@ const CoordinatorDashboard = () => {
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState<string>("");
 
+  // Search/Filter states
+  const [myEventsSearch, setMyEventsSearch] = useState("");
+  const [myEventsCategoryFilter, setMyEventsCategoryFilter] = useState("all");
+  const [participateSearch, setParticipateSearch] = useState("");
+  const [participateClubFilter, setParticipateClubFilter] = useState("all");
+
   // Notification States
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [dismissedNotifications, setDismissedNotifications] = useState<string[]>(() => {
@@ -193,6 +199,30 @@ const CoordinatorDashboard = () => {
     } catch (error: any) {
       toast.error("Failed to delete event: " + error.message);
     }
+  };
+
+  const handleExportMyEventsCSV = () => {
+    const headers = ["Event Name", "Club Name", "Category", "Date", "Duration (mins)", "Max Participants"];
+    const rows = myEvents.map(e => [
+      `"${e.name.replace(/"/g, '""')}"`,
+      `"${(e.clubs?.name || '').replace(/"/g, '""')}"`,
+      `"${e.category || ''}"`,
+      new Date(e.event_date).toISOString().split('T')[0],
+      e.duration,
+      e.max_participants || "Unlimited"
+    ]);
+    
+    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `club_events_report_${new Date().getFullYear()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Events report exported successfully!");
   };
 
   // Participate view registrations
@@ -389,6 +419,21 @@ const CoordinatorDashboard = () => {
     }
   };
 
+  // Filter computations
+  const filteredMyEvents = myEvents.filter(e => {
+    const matchesSearch = e.name?.toLowerCase().includes(myEventsSearch.toLowerCase()) || 
+                          e.description?.toLowerCase().includes(myEventsSearch.toLowerCase());
+    const matchesCategory = myEventsCategoryFilter === "all" || e.category === myEventsCategoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  const filteredParticipateEvents = participateEvents.filter(e => {
+    const matchesSearch = e.name?.toLowerCase().includes(participateSearch.toLowerCase()) || 
+                          e.description?.toLowerCase().includes(participateSearch.toLowerCase());
+    const matchesClub = participateClubFilter === "all" || e.club_id === participateClubFilter;
+    return matchesSearch && matchesClub;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -499,12 +544,16 @@ const CoordinatorDashboard = () => {
                 <section>
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
                     <h2 className="text-xl sm:text-2xl font-bold">My Events</h2>
-                    <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="gap-1.5 sm:gap-2 w-full sm:w-auto font-bold bg-gradient-primary">
-                          <Plus className="w-4 h-4" /> Create Event
-                        </Button>
-                      </DialogTrigger>
+                    <div className="flex gap-2 w-full sm:w-auto animate-fadeIn">
+                      <Button size="sm" variant="outline" onClick={() => handleExportMyEventsCSV()} className="gap-1.5 sm:gap-2 w-full sm:w-auto font-semibold">
+                        <Download className="w-4 h-4" /> Export Excel
+                      </Button>
+                      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" className="gap-1.5 sm:gap-2 w-full sm:w-auto font-bold bg-gradient-primary">
+                            <Plus className="w-4 h-4" /> Create Event
+                          </Button>
+                        </DialogTrigger>
                       <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Create New Event</DialogTitle>
@@ -638,16 +687,42 @@ const CoordinatorDashboard = () => {
                       </DialogContent>
                     </Dialog>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {myEvents.length === 0 ? (
-                      <Card className="col-span-full bg-white/70 border border-white/50 backdrop-blur-sm">
-                        <CardContent className="py-6 sm:py-8 text-center text-sm sm:text-base text-muted-foreground">
-                          No events created yet. Create your first event!
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      myEvents.map((event) => (
+                <div className="flex flex-col sm:flex-row gap-3 pb-3 w-full sm:max-w-2xl">
+                  <Input
+                    placeholder="Search my events by name or description..."
+                    value={myEventsSearch}
+                    onChange={(e) => setMyEventsSearch(e.target.value)}
+                    className="bg-white/80 backdrop-blur-sm border-slate-200 flex-1"
+                  />
+                  <Select value={myEventsCategoryFilter} onValueChange={setMyEventsCategoryFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px] bg-white/80 backdrop-blur-sm">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="Cultural">Cultural</SelectItem>
+                      <SelectItem value="Technical">Technical</SelectItem>
+                      <SelectItem value="Sports">Sports</SelectItem>
+                      <SelectItem value="Competition">Competition</SelectItem>
+                      <SelectItem value="Workshop">Workshop</SelectItem>
+                      <SelectItem value="Quiz">Quiz</SelectItem>
+                      <SelectItem value="Guest Lecture">Guest Lecture</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredMyEvents.length === 0 ? (
+                    <Card className="col-span-full bg-white/70 border border-white/50 backdrop-blur-sm">
+                      <CardContent className="py-6 sm:py-8 text-center text-sm sm:text-base text-muted-foreground">
+                        No events found matching your search.
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    filteredMyEvents.map((event) => (
                         <Card key={event.id} className={`bg-white/70 border border-white/50 border-l-4 ${event.category?.toLowerCase() === 'technical' ? 'border-l-blue-500' : event.category?.toLowerCase() === 'cultural' ? 'border-l-purple-500' : event.category?.toLowerCase() === 'sports' ? 'border-l-emerald-500' : 'border-l-amber-500'} backdrop-blur-sm shadow-card hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between`}>
                           <CardHeader className="pb-3 sm:pb-4">
                             <div className="flex justify-between items-start gap-2">
@@ -797,17 +872,38 @@ const CoordinatorDashboard = () => {
                   </TabsList>
 
                   {/* Catalog */}
-                  <TabsContent value="events" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {participateEvents.filter(e => new Date(e.event_date) >= new Date()).length === 0 ? (
-                      <Card className="col-span-full bg-white/70 border border-white/50 backdrop-blur-sm">
-                        <CardContent className="py-8 text-center text-muted-foreground">
-                          No upcoming events catalogued right now.
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      participateEvents
-                        .filter(e => new Date(e.event_date) >= new Date())
-                        .map((event) => (
+                  <TabsContent value="events" className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-3 pb-2 w-full sm:max-w-2xl">
+                      <Input
+                        placeholder="Search catalog by name or description..."
+                        value={participateSearch}
+                        onChange={(e) => setParticipateSearch(e.target.value)}
+                        className="bg-white/80 backdrop-blur-sm border-slate-200 flex-1"
+                      />
+                      <Select value={participateClubFilter} onValueChange={setParticipateClubFilter}>
+                        <SelectTrigger className="w-full sm:w-[180px] bg-white/80 backdrop-blur-sm">
+                          <SelectValue placeholder="Filter by Club" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Clubs</SelectItem>
+                          {allClubs.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredParticipateEvents.filter(e => new Date(e.event_date) >= new Date()).length === 0 ? (
+                        <Card className="col-span-full bg-white/70 border border-white/50 backdrop-blur-sm">
+                          <CardContent className="py-8 text-center text-muted-foreground">
+                            No upcoming events found matching your search.
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        filteredParticipateEvents
+                          .filter(e => new Date(e.event_date) >= new Date())
+                          .map((event) => (
                           <Card key={event.id} className={`bg-white/70 border border-white/50 border-l-4 ${event.category?.toLowerCase() === 'technical' ? 'border-l-blue-500' : event.category?.toLowerCase() === 'cultural' ? 'border-l-purple-500' : event.category?.toLowerCase() === 'sports' ? 'border-l-emerald-500' : 'border-l-amber-500'} backdrop-blur-sm shadow-card hover:shadow-button hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between`}>
                             <CardHeader className="pb-3">
                               <div className="flex justify-between items-start gap-2">
@@ -836,7 +932,8 @@ const CoordinatorDashboard = () => {
                           </Card>
                         ))
                     )}
-                  </TabsContent>
+                  </div>
+                </TabsContent>
 
                   {/* Clubs Catalog */}
                   <TabsContent value="clubs" className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -223,7 +223,7 @@ const AdminDashboard = () => {
       `"${(e.clubs?.name || '').replace(/"/g, '""')}"`,
       `"${(e.profiles?.full_name || '').replace(/"/g, '""')}"`,
       `"${e.category || ''}"`,
-      new Date(e.event_date).toLocaleDateString(),
+      new Date(e.event_date).toISOString().split('T')[0],
       e.duration,
       e.registered_count || 0,
       e.attended_count || 0

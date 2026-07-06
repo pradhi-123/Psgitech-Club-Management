@@ -10,6 +10,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import api from "@/lib/apiClient";
 import { Award, Calendar, LogOut, Trophy, Users, Download, User, Phone, Bell, BellOff, Trash2, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QRCodeSVG } from "qrcode.react";
 import jsPDF from "jspdf";
 import collegeLogo from "@/assets/college-logo.png";
@@ -34,6 +36,10 @@ const StudentDashboard = () => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState<string>("");
+
+  // Search/Filter states
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogClubFilter, setCatalogClubFilter] = useState("all");
 
   // Notification States
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
@@ -330,6 +336,14 @@ const StudentDashboard = () => {
     }
   };
 
+  // Filter computations
+  const filteredCatalogEvents = events.filter(e => {
+    const matchesSearch = e.name?.toLowerCase().includes(catalogSearch.toLowerCase()) || 
+                          e.description?.toLowerCase().includes(catalogSearch.toLowerCase());
+    const matchesClub = catalogClubFilter === "all" || e.club_id === catalogClubFilter;
+    return matchesSearch && matchesClub;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -486,52 +500,74 @@ const StudentDashboard = () => {
               </TabsList>
 
               <TabsContent value="events" className="space-y-4">
-                {events.filter(event => new Date(event.event_date) >= new Date()).length === 0 ? (
-                  <Card>
-                    <CardContent className="py-8 text-center text-muted-foreground">
-                      No upcoming events at the moment. Check back soon!
-                    </CardContent>
-                  </Card>
-                ) : (
-                  events.filter(event => new Date(event.event_date) >= new Date()).map((event) => (
-                    <Card key={event.id} className={`bg-white/70 border border-white/50 border-l-4 ${event.category?.toLowerCase() === 'technical' ? 'border-l-blue-500' : event.category?.toLowerCase() === 'cultural' ? 'border-l-purple-500' : event.category?.toLowerCase() === 'sports' ? 'border-l-emerald-500' : 'border-l-amber-500'} backdrop-blur-sm shadow-card hover:shadow-button hover:scale-[1.01] transition-all duration-300`}>
-                      <CardHeader className="pb-3 sm:pb-6">
-                        <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
-                          <div className="flex-1 min-w-0">
-                            <CardTitle className="text-base sm:text-xl mb-1">{event.name}</CardTitle>
-                            <CardDescription className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                              <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                              <span className="truncate">{event.clubs?.name}</span>
-                            </CardDescription>
-                          </div>
-                          <Badge className="bg-gradient-primary text-white text-xs shrink-0">
-                            {event.category}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3 sm:space-y-4">
-                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{event.description}</p>
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                          <div className="text-xs sm:text-sm space-y-0.5">
-                            <p className="font-semibold">
-                              {new Date(event.event_date).toLocaleDateString()} at{" "}
-                              {new Date(event.event_date).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                            <p className="text-muted-foreground">
-                              {event.duration} mins • {event.credit_points} pts
-                            </p>
-                          </div>
-                          <Button size="sm" onClick={() => showConfirmDialog(event.id)} className="w-full sm:w-auto">
-                            Register
-                          </Button>
-                        </div>
+                <div className="flex flex-col sm:flex-row gap-3 pb-2 w-full sm:max-w-2xl animate-fadeIn">
+                  <Input
+                    placeholder="Search events by name or description..."
+                    value={catalogSearch}
+                    onChange={(e) => setCatalogSearch(e.target.value)}
+                    className="bg-white/80 backdrop-blur-sm border-slate-200 flex-1"
+                  />
+                  <Select value={catalogClubFilter} onValueChange={setCatalogClubFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px] bg-white/80 backdrop-blur-sm">
+                      <SelectValue placeholder="Filter by Club" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Clubs</SelectItem>
+                      {clubs.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredCatalogEvents.filter(event => new Date(event.event_date) >= new Date()).length === 0 ? (
+                    <Card className="col-span-full">
+                      <CardContent className="py-8 text-center text-muted-foreground">
+                        No upcoming events found matching your search.
                       </CardContent>
                     </Card>
-                  ))
-                )}
+                  ) : (
+                    filteredCatalogEvents.filter(event => new Date(event.event_date) >= new Date()).map((event) => (
+                      <Card key={event.id} className={`bg-white/70 border border-white/50 border-l-4 ${event.category?.toLowerCase() === 'technical' ? 'border-l-blue-500' : event.category?.toLowerCase() === 'cultural' ? 'border-l-purple-500' : event.category?.toLowerCase() === 'sports' ? 'border-l-emerald-500' : 'border-l-amber-500'} backdrop-blur-sm shadow-card hover:shadow-button hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between`}>
+                        <CardHeader className="pb-3 sm:pb-6">
+                          <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-base sm:text-xl mb-1">{event.name}</CardTitle>
+                              <CardDescription className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                                <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                                <span className="truncate">{event.clubs?.name}</span>
+                              </CardDescription>
+                            </div>
+                            <Badge className="bg-gradient-primary text-white text-xs shrink-0">
+                              {event.category}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3 sm:space-y-4 mt-auto">
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{event.description}</p>
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div className="text-xs sm:text-sm space-y-0.5">
+                              <p className="font-semibold text-slate-700">
+                                {new Date(event.event_date).toLocaleDateString()} at{" "}
+                                {new Date(event.event_date).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                              <p className="text-muted-foreground text-[11px] sm:text-xs">
+                                {event.duration} mins • {event.credit_points} pts
+                              </p>
+                            </div>
+                            <Button size="sm" onClick={() => showConfirmDialog(event.id)} className="w-full sm:w-auto bg-gradient-primary">
+                              Register
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="clubs" className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
