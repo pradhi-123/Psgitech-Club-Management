@@ -82,7 +82,7 @@ const Index = () => {
         }
         @keyframes marquee {
           0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+          100% { transform: translateX(-25%); }
         }
         .marquee-card {
           width: 310px;
@@ -166,7 +166,7 @@ const Index = () => {
         {/* Dynamic Auto-Scrolling Features Marquee */}
         <div className="marquee-container mt-6">
           <div className="marquee-inner">
-            {[
+            {Array(4).fill([
               {
                 title: "Discover Events",
                 desc: "Seamlessly search and register for technical workshops, cultural meets, and sports events.",
@@ -191,32 +191,7 @@ const Index = () => {
                 icon: <GraduationCap className="w-6 h-6 text-emerald-600" />,
                 bg: "from-emerald-500/10 to-teal-500/10 border-emerald-200"
               }
-            ].concat([ /* Duplicate set for infinite loop */
-              {
-                title: "Discover Events",
-                desc: "Seamlessly search and register for technical workshops, cultural meets, and sports events.",
-                icon: <Calendar className="w-6 h-6 text-blue-600" />,
-                bg: "from-blue-500/10 to-cyan-500/10 border-blue-200"
-              },
-              {
-                title: "Achievements Cabinet",
-                desc: "Grow your points, unlock exclusive achievement levels, and build your digital credentials shelf.",
-                icon: <Trophy className="w-6 h-6 text-amber-500" />,
-                bg: "from-amber-500/10 to-orange-500/10 border-amber-200"
-              },
-              {
-                title: "Volunteer Credits",
-                desc: "Serve as a volunteer, earn extra points, and download certified volunteer accolades.",
-                icon: <Award className="w-6 h-6 text-purple-600" />,
-                bg: "from-purple-500/10 to-pink-500/10 border-purple-200"
-              },
-              {
-                title: "Verifiable PDFs",
-                desc: "Get instant downloads of premium signature-verified landscape certificates for your records.",
-                icon: <GraduationCap className="w-6 h-6 text-emerald-600" />,
-                bg: "from-emerald-500/10 to-teal-500/10 border-emerald-200"
-              }
-            ]).map((item, idx) => (
+            ]).flat().map((item, idx) => (
               <div
                 key={idx}
                 className="marquee-card text-left"
