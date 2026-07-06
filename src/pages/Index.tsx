@@ -1,12 +1,25 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Trophy, Award, Calendar, ChevronRight } from "lucide-react";
+import { GraduationCap, Trophy, Award, Calendar, ChevronRight, ChevronLeft } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
   const { profile, loading } = useAuth();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleScrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -340, behavior: 'smooth' });
+    }
+  };
+
+  const handleScrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 340, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     if (!loading && profile) {
@@ -82,52 +95,32 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Infinite Auto-Scrolling Marquee Slider */}
-        <style>{`
-          .marquee-container {
-            width: 100vw;
-            position: relative;
-            left: 50%;
-            right: 50%;
-            margin-left: -50vw;
-            margin-right: -50vw;
-            overflow: hidden;
-            padding: 2rem 0;
-          }
-          .marquee-inner {
-            display: flex;
-            width: max-content;
-            animation: marquee 25s linear infinite;
-          }
-          .marquee-inner:hover {
-            animation-play-state: paused;
-          }
-          @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-          }
-          .marquee-card {
-            width: 320px;
-            margin: 0 1rem;
-            flex-shrink: 0;
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(10px);
-            border-radius: 1.5rem;
-            padding: 1.75rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-          .marquee-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            border-color: rgba(59, 130, 246, 0.5);
-            box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.04);
-            background: white;
-          }
-        `}</style>
+        {/* Amazon-style Deal Rail Carousel */}
+        <div className="relative w-full max-w-5xl mx-auto px-4 mt-6 group">
+          {/* Left Arrow Button */}
+          <button
+            onClick={handleScrollLeft}
+            className="absolute left-[-10px] sm:left-[-20px] top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/90 hover:bg-white border border-slate-200 shadow-lg text-slate-800 transition-all hover:scale-110 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus:outline-none"
+            aria-label="Scroll Left"
+          >
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
 
-        <div className="marquee-container mt-4">
-          <div className="marquee-inner">
+          {/* Carousel Scroll Container */}
+          <div
+            ref={scrollContainerRef}
+            className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory py-4 px-2 no-scrollbar"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
+            {/* Styles to hide scrollbar in Chrome/Safari */}
+            <style>{`
+              .no-scrollbar::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
             {[
               {
                 title: "Discover Events",
@@ -153,33 +146,11 @@ const Index = () => {
                 icon: <GraduationCap className="w-6 h-6 text-emerald-600" />,
                 bg: "from-emerald-500/10 to-teal-500/10 border-emerald-200"
               }
-            ].concat([
-              {
-                title: "Discover Events",
-                desc: "Seamlessly search and register for technical workshops, cultural meets, and sports events.",
-                icon: <Calendar className="w-6 h-6 text-blue-600" />,
-                bg: "from-blue-500/10 to-cyan-500/10 border-blue-200"
-              },
-              {
-                title: "Achievements Cabinet",
-                desc: "Grow your points, unlock exclusive achievement levels, and build your digital credentials shelf.",
-                icon: <Trophy className="w-6 h-6 text-amber-500" />,
-                bg: "from-amber-500/10 to-orange-500/10 border-amber-200"
-              },
-              {
-                title: "Volunteer Credits",
-                desc: "Serve as a volunteer, earn extra points, and download certified volunteer accolades.",
-                icon: <Award className="w-6 h-6 text-purple-600" />,
-                bg: "from-purple-500/10 to-pink-500/10 border-purple-200"
-              },
-              {
-                title: "Verifiable PDFs",
-                desc: "Get instant downloads of premium signature-verified landscape certificates for your records.",
-                icon: <GraduationCap className="w-6 h-6 text-emerald-600" />,
-                bg: "from-emerald-500/10 to-teal-500/10 border-emerald-200"
-              }
-            ]).map((item, idx) => (
-              <div key={idx} className="marquee-card text-left">
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                className="w-[280px] sm:w-[320px] shrink-0 snap-start bg-white/80 border border-slate-200/60 backdrop-blur-md rounded-3xl p-6 shadow-sm hover:shadow-xl hover:translate-y-[-6px] hover:border-blue-300 transition-all duration-300 text-left"
+              >
                 <div className={`p-3 rounded-2xl w-fit mb-4 bg-gradient-to-tr ${item.bg} border`}>
                   {item.icon}
                 </div>
@@ -188,6 +159,15 @@ const Index = () => {
               </div>
             ))}
           </div>
+
+          {/* Right Arrow Button */}
+          <button
+            onClick={handleScrollRight}
+            className="absolute right-[-10px] sm:right-[-20px] top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/90 hover:bg-white border border-slate-200 shadow-lg text-slate-800 transition-all hover:scale-110 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus:outline-none"
+            aria-label="Scroll Right"
+          >
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
         </div>
       </main>
 
