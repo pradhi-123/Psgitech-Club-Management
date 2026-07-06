@@ -37,6 +37,7 @@ const AdminDashboard = () => {
   const [clubCoordinators, setClubCoordinators] = useState([{ name: "", phone: "", email: "", password: "" }]);
   const [coordinatorForm, setCoordinatorForm] = useState({
     full_name: "",
+    phone: "",
     email: "",
     password: "",
     club_id: "",
@@ -59,6 +60,21 @@ const AdminDashboard = () => {
   const [editClubCoordinators, setEditClubCoordinators] = useState([{ name: "", phone: "", email: "", password: "" }]);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
   const [visibleEditPasswords, setVisibleEditPasswords] = useState<Record<number, boolean>>({});
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [isAddClubOpen, setIsAddClubOpen] = useState(false);
+  const [isAddCoordinatorOpen, setIsAddCoordinatorOpen] = useState(false);
+  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  
+  // Search, Filter, Sort States
+  const [clubsSearch, setClubsSearch] = useState("");
+  const [coordsSearch, setCoordsSearch] = useState("");
+  const [coordsClubFilter, setCoordsClubFilter] = useState("all");
+  const [studentsSearch, setStudentsSearch] = useState("");
+  const [studentsDeptFilter, setStudentsDeptFilter] = useState("all");
+  const [studentsYearFilter, setStudentsYearFilter] = useState("all");
+  const [eventsSearch, setEventsSearch] = useState("");
+  const [eventsClubFilter, setEventsClubFilter] = useState("all");
+  const [eventsSortOrder, setEventsSortOrder] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
     if (!loading && (!profile || profile.role !== "admin")) {
@@ -167,6 +183,7 @@ const AdminDashboard = () => {
       });
       
       toast.success("Club added successfully!");
+      setIsAddClubOpen(false);
       setClubForm({ name: "", description: "" });
       setClubCoordinators([{ name: "", phone: "", email: "", password: "" }]);
       setVisiblePasswords({});
@@ -187,6 +204,44 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!window.confirm("Are you sure you want to delete this event? This will also remove all registrations for it.")) return;
+    try {
+      await api.delete(`/api/events/${eventId}`);
+      toast.success("Event deleted successfully!");
+      fetchData();
+    } catch (error: any) {
+      toast.error("Failed to delete event: " + error.message);
+    }
+  };
+
+  const handleExportEventsCSV = () => {
+    // Generate CSV content
+    const headers = ["Event Name", "Club Name", "Coordinator", "Category", "Date", "Duration (mins)", "Registrations", "Attended"];
+    const rows = events.map(e => [
+      `"${e.name.replace(/"/g, '""')}"`,
+      `"${(e.clubs?.name || '').replace(/"/g, '""')}"`,
+      `"${(e.profiles?.full_name || '').replace(/"/g, '""')}"`,
+      `"${e.category || ''}"`,
+      new Date(e.event_date).toLocaleDateString(),
+      e.duration,
+      e.registered_count || 0,
+      e.attended_count || 0
+    ]);
+    
+    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `annual_events_report_${new Date().getFullYear()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Annual events report exported successfully!");
+  };
+
   const handleAddCoordinator = async () => {
     try {
       await api.post("/api/auth/users", {
@@ -195,10 +250,12 @@ const AdminDashboard = () => {
         full_name: coordinatorForm.full_name,
         role: "coordinator",
         club_id: coordinatorForm.club_id,
+        phone: coordinatorForm.phone,
       });
 
       toast.success("Coordinator added successfully!");
-      setCoordinatorForm({ full_name: "", email: "", password: "", club_id: "" });
+      setIsAddCoordinatorOpen(false);
+      setCoordinatorForm({ full_name: "", phone: "", email: "", password: "", club_id: "" });
       fetchData();
     } catch (error: any) {
       toast.error("Failed to add coordinator: " + error.message);
@@ -223,6 +280,7 @@ const AdminDashboard = () => {
       });
 
       toast.success("Student added successfully!");
+      setIsAddStudentOpen(false);
       setStudentForm({
         full_name: "",
         email: "",
@@ -275,6 +333,39 @@ const AdminDashboard = () => {
       toast.error("Failed to delete user: " + error.message);
     }
   };
+
+  // Filter computations
+  const filteredClubs = clubs.filter(club => 
+    club.name?.toLowerCase().includes(clubsSearch.toLowerCase()) || 
+    club.description?.toLowerCase().includes(clubsSearch.toLowerCase())
+  );
+
+  const filteredCoords = coordinators.filter(c => {
+    const matchesSearch = c.full_name?.toLowerCase().includes(coordsSearch.toLowerCase()) || 
+                          c.email?.toLowerCase().includes(coordsSearch.toLowerCase());
+    const matchesClub = coordsClubFilter === "all" || c.club_id === coordsClubFilter;
+    return matchesSearch && matchesClub;
+  });
+
+  const filteredStudents = students.filter(s => {
+    const matchesSearch = s.full_name?.toLowerCase().includes(studentsSearch.toLowerCase()) || 
+                          s.email?.toLowerCase().includes(studentsSearch.toLowerCase()) || 
+                          s.roll_number?.toLowerCase().includes(studentsSearch.toLowerCase());
+    const matchesDept = studentsDeptFilter === "all" || s.department === studentsDeptFilter;
+    const matchesYear = studentsYearFilter === "all" || s.year?.toString() === studentsYearFilter;
+    return matchesSearch && matchesDept && matchesYear;
+  });
+
+  const filteredEvents = events.filter(e => {
+    const matchesSearch = e.name?.toLowerCase().includes(eventsSearch.toLowerCase()) || 
+                          e.description?.toLowerCase().includes(eventsSearch.toLowerCase());
+    const matchesClub = eventsClubFilter === "all" || e.club_id === eventsClubFilter;
+    return matchesSearch && matchesClub;
+  }).sort((a, b) => {
+    const dateA = new Date(a.event_date).getTime();
+    const dateB = new Date(b.event_date).getTime();
+    return eventsSortOrder === "asc" ? dateA - dateB : dateB - dateA;
+  });
 
   if (loading) {
     return (
@@ -370,7 +461,7 @@ const AdminDashboard = () => {
               <TabsContent value="clubs" className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold">Clubs</h2>
-                  <Dialog>
+                  <Dialog open={isAddClubOpen} onOpenChange={setIsAddClubOpen}>
                     <DialogTrigger asChild>
                       <Button className="gap-2">
                         <Plus className="w-4 h-4" /> Add Club
@@ -483,8 +574,17 @@ const AdminDashboard = () => {
                   </Dialog>
                 </div>
 
+                <div className="w-full max-w-sm pb-2">
+                  <Input
+                    placeholder="Search clubs by name or description..."
+                    value={clubsSearch}
+                    onChange={(e) => setClubsSearch(e.target.value)}
+                    className="bg-white/80 backdrop-blur-sm border-slate-200"
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {clubs.map((club, idx) => (
+                  {filteredClubs.map((club, idx) => (
                     <Card key={club.id} className={`bg-gradient-to-br ${clubGradients[idx % clubGradients.length]} backdrop-blur-md border shadow-card flex flex-col justify-between hover:shadow-button hover:scale-[1.01] transition-all duration-300`}>
                       <CardHeader className="pb-3">
                         <div className="flex justify-between items-start gap-2">
@@ -539,13 +639,17 @@ const AdminDashboard = () => {
               <TabsContent value="coordinators" className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold">Coordinators</h2>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button className="gap-2">
-                        <Plus className="w-4 h-4" /> Add Coordinator
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="gap-2" onClick={() => setIsSummaryOpen(true)}>
+                      <FileText className="w-4 h-4" /> Events Summary
+                    </Button>
+                    <Dialog open={isAddCoordinatorOpen} onOpenChange={setIsAddCoordinatorOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="gap-2">
+                          <Plus className="w-4 h-4" /> Add Coordinator
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Add New Coordinator</DialogTitle>
                         <DialogDescription>Create a coordinator and assign to a club</DialogDescription>
@@ -557,6 +661,16 @@ const AdminDashboard = () => {
                             value={coordinatorForm.full_name}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                               setCoordinatorForm({ ...coordinatorForm, full_name: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Phone Number</Label>
+                          <Input
+                            type="tel"
+                            value={coordinatorForm.phone}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              setCoordinatorForm({ ...coordinatorForm, phone: e.target.value })
                             }
                           />
                         </div>
@@ -607,15 +721,39 @@ const AdminDashboard = () => {
                     </DialogContent>
                   </Dialog>
                 </div>
+              </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pb-2 w-full sm:max-w-2xl">
+                  <Input
+                    placeholder="Search coordinators by name or email..."
+                    value={coordsSearch}
+                    onChange={(e) => setCoordsSearch(e.target.value)}
+                    className="bg-white/80 backdrop-blur-sm border-slate-200 flex-1"
+                  />
+                  <Select value={coordsClubFilter} onValueChange={setCoordsClubFilter}>
+                    <SelectTrigger className="w-full sm:w-[200px] bg-white/80 backdrop-blur-sm">
+                      <SelectValue placeholder="Filter by Club" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Clubs</SelectItem>
+                      {clubs.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 <div className="space-y-4">
-                  {coordinators.map((coordinator) => (
+                  {filteredCoords.map((coordinator) => (
                     <Card key={coordinator.id} className="shadow-card">
                       <CardHeader>
                         <div className="flex justify-between items-start">
                           <div>
                             <CardTitle>{coordinator.full_name}</CardTitle>
-                            <CardDescription>{coordinator.email}</CardDescription>
+                            <CardDescription>{coordinator.email} {coordinator.phone && `• ${coordinator.phone}`}</CardDescription>
+                            <p className="text-xs font-semibold text-primary mt-1">
+                              Club: {coordinator.club_name || "Unassigned"}
+                            </p>
                           </div>
                           <div className="flex gap-2">
                             <Button
@@ -643,7 +781,7 @@ const AdminDashboard = () => {
               <TabsContent value="students" className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold">Students</h2>
-                  <Dialog>
+                  <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
                     <DialogTrigger asChild>
                       <Button className="gap-2">
                         <Plus className="w-4 h-4" /> Add Student
@@ -730,8 +868,43 @@ const AdminDashboard = () => {
                   </Dialog>
                 </div>
 
+                <div className="flex flex-col sm:flex-row gap-3 pb-2 w-full sm:max-w-3xl">
+                  <Input
+                    placeholder="Search students by name, email, roll number..."
+                    value={studentsSearch}
+                    onChange={(e) => setStudentsSearch(e.target.value)}
+                    className="bg-white/80 backdrop-blur-sm border-slate-200 flex-1"
+                  />
+                  <Select value={studentsDeptFilter} onValueChange={setStudentsDeptFilter}>
+                    <SelectTrigger className="w-full sm:w-[150px] bg-white/80 backdrop-blur-sm">
+                      <SelectValue placeholder="Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Depts</SelectItem>
+                      <SelectItem value="CSE">CSE</SelectItem>
+                      <SelectItem value="ECE">ECE</SelectItem>
+                      <SelectItem value="EEE">EEE</SelectItem>
+                      <SelectItem value="MECH">MECH</SelectItem>
+                      <SelectItem value="CIVIL">CIVIL</SelectItem>
+                      <SelectItem value="AIDS">AIDS</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={studentsYearFilter} onValueChange={setStudentsYearFilter}>
+                    <SelectTrigger className="w-full sm:w-[120px] bg-white/80 backdrop-blur-sm">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Years</SelectItem>
+                      <SelectItem value="1">1st Year</SelectItem>
+                      <SelectItem value="2">2nd Year</SelectItem>
+                      <SelectItem value="3">3rd Year</SelectItem>
+                      <SelectItem value="4">4th Year</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-4">
-                  {students.map((student) => (
+                  {filteredStudents.map((student) => (
                     <Card key={student.id} className="shadow-card">
                       <CardHeader>
                         <div className="flex justify-between items-start">
@@ -766,15 +939,63 @@ const AdminDashboard = () => {
               </TabsContent>
 
               <TabsContent value="events" className="space-y-4">
-                <h2 className="text-2xl font-bold">All Events</h2>
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">All Events</h2>
+                  <Button variant="outline" className="gap-2" onClick={() => handleExportEventsCSV()}>
+                    <Download className="w-4 h-4" /> Export Excel Report
+                  </Button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pb-2 w-full sm:max-w-3xl">
+                  <Input
+                    placeholder="Search events by name or description..."
+                    value={eventsSearch}
+                    onChange={(e) => setEventsSearch(e.target.value)}
+                    className="bg-white/80 backdrop-blur-sm border-slate-200 flex-1"
+                  />
+                  <Select value={eventsClubFilter} onValueChange={setEventsClubFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px] bg-white/80 backdrop-blur-sm">
+                      <SelectValue placeholder="Filter by Club" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Clubs</SelectItem>
+                      {clubs.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={eventsSortOrder} onValueChange={(val: "asc" | "desc") => setEventsSortOrder(val)}>
+                    <SelectTrigger className="w-full sm:w-[150px] bg-white/80 backdrop-blur-sm">
+                      <SelectValue placeholder="Sort Date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="desc">Date (Newest)</SelectItem>
+                      <SelectItem value="asc">Date (Oldest)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-4">
-                  {events.map((event) => (
+                  {filteredEvents.map((event) => (
                     <Card key={event.id} className={`bg-white/70 border border-white/50 border-l-4 ${event.category?.toLowerCase() === 'technical' ? 'border-l-blue-500' : event.category?.toLowerCase() === 'cultural' ? 'border-l-purple-500' : event.category?.toLowerCase() === 'sports' ? 'border-l-emerald-500' : 'border-l-amber-500'} backdrop-blur-sm shadow-card hover:scale-[1.01] transition-all duration-300`}>
                       <CardHeader>
-                        <CardTitle>{event.name}</CardTitle>
-                        <CardDescription>
-                          {event.clubs?.name} • Coordinator: {event.profiles?.full_name}
-                        </CardDescription>
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <CardTitle className="truncate">{event.name}</CardTitle>
+                            <CardDescription className="truncate">
+                              {event.clubs?.name} • Coordinator: {event.profiles?.full_name}
+                            </CardDescription>
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="h-8 w-8 shrink-0"
+                            title="Delete Event"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-muted-foreground">
@@ -789,6 +1010,56 @@ const AdminDashboard = () => {
           </div>
         </div>
       </PullToRefresh>
+
+      {/* Event Annual Summary Dialog */}
+      <Dialog open={isSummaryOpen} onOpenChange={setIsSummaryOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Annual Events Summary Report</DialogTitle>
+            <DialogDescription>List of all events organized up to {new Date().toLocaleDateString()}</DialogDescription>
+          </DialogHeader>
+          
+          <div className="border rounded-md overflow-hidden bg-white mt-4">
+            <div className="max-h-[50vh] overflow-y-auto">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="border-b bg-slate-50 font-semibold text-slate-700">
+                    <th className="p-3">Event Name</th>
+                    <th className="p-3">Organising Club</th>
+                    <th className="p-3">Date</th>
+                    <th className="p-3 text-center">Registrations</th>
+                    <th className="p-3 text-center">Attendees</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {events.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center text-slate-400">No events found.</td>
+                    </tr>
+                  ) : (
+                    events.map((e) => (
+                      <tr key={e.id} className="border-b hover:bg-slate-50/50 transition-colors">
+                        <td className="p-3 font-medium text-slate-900">{e.name}</td>
+                        <td className="p-3 text-slate-600">{e.clubs?.name || "College Club"}</td>
+                        <td className="p-3 text-slate-500">{new Date(e.event_date).toLocaleDateString()}</td>
+                        <td className="p-3 text-center font-semibold text-slate-600">{e.registered_count || 0}</td>
+                        <td className="p-3 text-center font-semibold text-emerald-600">{e.attended_count || 0}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => handleExportEventsCSV()} className="gap-1.5">
+              <Download className="w-4 h-4" /> Download Annual Report (Excel)
+            </Button>
+            <Button onClick={() => setIsSummaryOpen(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit User Dialog */}
       <Dialog open={!!editingUser} onOpenChange={(open: boolean) => !open && setEditingUser(null)}>

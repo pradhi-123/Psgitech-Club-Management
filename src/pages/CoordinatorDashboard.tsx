@@ -184,6 +184,17 @@ const CoordinatorDashboard = () => {
     }
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!window.confirm("Are you sure you want to delete this event? This will also remove all registrations for it.")) return;
+    try {
+      await api.delete(`/api/events/${eventId}`);
+      toast.success("Event deleted successfully!");
+      fetchData();
+    } catch (error: any) {
+      toast.error("Failed to delete event: " + error.message);
+    }
+  };
+
   // Participate view registrations
   const showConfirmRegisterDialog = (eventId: string) => {
     const isRegistered = myRegistrations.some(reg => reg.event_id === eventId);
@@ -347,16 +358,22 @@ const CoordinatorDashboard = () => {
       doc.setFont('times', 'italic');
       doc.setFontSize(13);
       doc.setTextColor(15, 30, 54);
-      doc.text('Coordinator', 65, 154, { align: 'center' });
+      doc.text(cert.coordinators || 'Club Coordinator', 65, 154, { align: 'center' });
       
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(100, 110, 120);
-      doc.text('Club Coordinator', 65, 163, { align: 'center' });
+      doc.text('Club Coordinator(s)', 65, 163, { align: 'center' });
 
       // Principal
       doc.line(207, 158, 257, 158);
-      doc.text('Dr. G. Chandramohan', 232, 154, { align: 'center' });
+      doc.setFont('times', 'italic');
+      doc.setFontSize(13);
+      doc.setTextColor(15, 30, 54);
+      doc.text('Dr. Saravanakumar', 232, 154, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 110, 120);
       doc.text('Principal, PSG iTech', 232, 163, { align: 'center' });
 
       // Footer metadata
@@ -641,14 +658,25 @@ const CoordinatorDashboard = () => {
                                   <span className="truncate">{event.clubs?.name}</span>
                                 </CardDescription>
                               </div>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => navigate(`/coordinator/manage-event/${event.id}`)}
-                                className="text-xs h-8 shrink-0 shadow-sm border-slate-200 bg-white/80 hover:bg-white"
-                              >
-                                Manage
-                              </Button>
+                              <div className="flex gap-1.5 shrink-0">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => navigate(`/coordinator/manage-event/${event.id}`)}
+                                  className="text-xs h-8 shadow-sm border-slate-200 bg-white/80 hover:bg-white"
+                                >
+                                  Manage
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                  className="h-8 w-8"
+                                  title="Delete Event"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
                             </div>
                           </CardHeader>
                           <CardContent className="space-y-2 mt-auto">

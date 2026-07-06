@@ -28,6 +28,8 @@ const ManageEvent = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [scanType, setScanType] = useState<'entry' | 'exit'>('entry');
   const [dataLoading, setDataLoading] = useState(true);
+  const [volunteerRolls, setVolunteerRolls] = useState<string[]>([]);
+  const [volunteerNames, setVolunteerNames] = useState<Record<string, string>>({});
 
   // Edit Event Form State
   const [editForm, setEditForm] = useState({
@@ -72,6 +74,21 @@ const ManageEvent = () => {
 
       setEvent(foundEvent);
       setRegistrations(regsList || []);
+
+      if (foundEvent.volunteers) {
+        const rolls = foundEvent.volunteers.split(',').map((r: string) => r.trim()).filter((r: string) => r.length > 0);
+        setVolunteerRolls(rolls);
+        
+        try {
+          const nameData = await api.post("/api/events/volunteers/names", { rollNumbers: rolls });
+          setVolunteerNames(nameData.nameMap || {});
+        } catch (nameErr) {
+          console.error("Failed to load volunteer names", nameErr);
+        }
+      } else {
+        setVolunteerRolls([]);
+        setVolunteerNames({});
+      }
 
       // Pre-fill edit form
       // Convert ISO date back to local datetime-local input format
@@ -273,16 +290,17 @@ const ManageEvent = () => {
         pdf.setFont('times', 'italic');
         pdf.setFontSize(13);
         pdf.setTextColor(15, 30, 54);
-        pdf.text(profile?.full_name || 'Coordinator', 65, 154, { align: 'center' });
+        const coordNames = event?.clubs?.coordinators?.map((c: any) => c.name).join(', ') || profile?.full_name || 'Club Coordinator';
+        pdf.text(coordNames, 65, 154, { align: 'center' });
         
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(9);
         pdf.setTextColor(100, 110, 120);
-        pdf.text('Club Coordinator', 65, 163, { align: 'center' });
+        pdf.text('Club Coordinator(s)', 65, 163, { align: 'center' });
 
         // Right side: Principal
         pdf.line(207, 158, 257, 158);
-        pdf.text('Dr. G. Chandramohan', 232, 154, { align: 'center' });
+        pdf.text('Dr. Saravanakumar', 232, 154, { align: 'center' });
         pdf.text('Principal, PSG iTech', 232, 163, { align: 'center' });
 
         // 15. Certificate Metadata
@@ -291,9 +309,10 @@ const ManageEvent = () => {
         pdf.setTextColor(140, 145, 150);
         pdf.text(`Certificate ID: ${cert.certificateId}  |  Issued: ${cert.issuedDate}`, 148.5, 174, { align: 'center' });
         
-        // Download the PDF
-        pdf.save(`Certificate_${cert.studentName.replace(/\s+/g, '_')}_${cert.certificateId}.pdf`);
-        toast.success('Certificate downloaded successfully!');
+        // Open PDF in a new tab instead of download
+        const blobUrl = pdf.output('bloburl');
+        window.open(blobUrl, '_blank');
+        toast.success('Certificate generated successfully!');
       }
     } catch (error: any) {
       toast.error('Failed to generate certificate: ' + error.message);
@@ -311,10 +330,7 @@ const ManageEvent = () => {
     );
   }
 
-  // Parse volunteers array
-  const volunteerRolls = event?.volunteers 
-    ? event.volunteers.split(",").map((s: string) => s.trim()).filter((s: string) => s.length > 0)
-    : [];
+
 
   return (
     <>
@@ -424,7 +440,7 @@ const ManageEvent = () => {
                                     onClick={() => handleGenerateCertificate(reg.id)}
                                     className="h-8 gap-1 text-xs"
                                   >
-                                    <Award className="w-3.5 h-3.5" /> Certificate
+                                    <Award className="w-3.5 h-3.5" /> View Certificate
                                   </Button>
                                 )}
                               </td>
@@ -470,7 +486,7 @@ const ManageEvent = () => {
                               <tr key={idx} className="border-b hover:bg-muted/10 transition-colors">
                                 <td className="p-4 font-mono font-semibold">{roll}</td>
                                 <td className="p-4 text-foreground">
-                                  {reg?.profiles?.full_name || "Account not created yet"}
+                                  {volunteerNames[roll] || reg?.profiles?.full_name || "Account not created yet"}
                                 </td>
                                 <td className="p-4 font-medium text-amber-600">{event?.volunteer_points || 3} pts</td>
                                 <td className="p-4">
@@ -486,7 +502,7 @@ const ManageEvent = () => {
                                       onClick={() => handleGenerateCertificate(reg.id)}
                                       className="h-8 gap-1 text-xs"
                                     >
-                                      <Award className="w-3.5 h-3.5 text-amber-500" /> Certificate
+                                      <Award className="w-3.5 h-3.5 text-amber-500" /> View Certificate
                                     </Button>
                                   ) : (
                                     <Button 

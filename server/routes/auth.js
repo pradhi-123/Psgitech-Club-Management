@@ -105,14 +105,23 @@ const requireAdmin = (req, res, next) => {
 router.get('/users/coordinators', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const coordinators = await User.find({ role: 'coordinator' }).select('-password');
-    res.json(coordinators.map(c => ({
-      id: c._id,
-      full_name: c.full_name,
-      email: c.email,
-      role: c.role
-    })));
+    const clubs = await Club.find({});
+    res.json(coordinators.map(c => {
+      const assignedClub = clubs.find(club => 
+        club.coordinators?.some(coord => coord.email?.toLowerCase() === c.email?.toLowerCase())
+      );
+      return {
+        id: c._id,
+        full_name: c.full_name,
+        email: c.email,
+        phone: c.phone || '',
+        role: c.role,
+        club_name: assignedClub ? assignedClub.name : 'Unassigned',
+        club_id: assignedClub ? assignedClub._id : null
+      };
+    }));
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error fetching coordinators: ' + error.message });
   }
 });
 
@@ -137,7 +146,7 @@ router.get('/users/students', authenticateToken, requireAdmin, async (req, res) 
 
 // POST /api/users (Create a new user - Admin functionality replacing 'create-user' Edge Function)
 router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
-  const { email, password, full_name, role, roll_number, department, section, year, club_id } = req.body;
+  const { email, password, full_name, role, roll_number, department, section, year, club_id, phone } = req.body;
 
   try {
     // Check if user already exists
@@ -166,7 +175,8 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
       roll_number: roll_number ? roll_number.trim() : undefined,
       department,
       section,
-      year
+      year,
+      phone
     });
 
     // If student, initialize credits record (PostgreSQL trigger replacement)
@@ -188,7 +198,8 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
           club.coordinators = club.coordinators || [];
           club.coordinators.push({
             name: full_name,
-            email: email.toLowerCase().trim()
+            email: email.toLowerCase().trim(),
+            phone: phone
           });
           await club.save();
         }

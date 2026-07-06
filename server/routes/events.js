@@ -20,26 +20,34 @@ router.get('/', authenticateToken, async (req, res) => {
       .populate('coordinator_id', 'full_name')
       .sort({ event_date: 1 });
 
-    res.json(events.map(e => ({
-      id: e._id,
-      name: e.name,
-      category: e.category,
-      description: e.description,
-      event_date: e.event_date.toISOString(),
-      duration: e.duration,
-      max_participants: e.max_participants,
-      credit_points: e.credit_points,
-      bonus_points: e.bonus_points,
-      volunteer_points: e.volunteer_points || 3, // mapped
-      volunteers: e.volunteers,
-      club_id: e.club_id?._id,
-      coordinator_id: e.coordinator_id?._id,
-      created_at: e.created_at,
-      clubs: e.club_id ? { name: e.club_id.name, coordinators: e.club_id.coordinators || [] } : null,
-      profiles: e.coordinator_id ? { full_name: e.coordinator_id.full_name } : null
-    })));
+    const eventsWithStats = await Promise.all(events.map(async e => {
+      const registeredCount = await EventRegistration.countDocuments({ event_id: e._id });
+      const attendedCount = await EventRegistration.countDocuments({ event_id: e._id, attendance_confirmed: true });
+      return {
+        id: e._id,
+        name: e.name,
+        category: e.category,
+        description: e.description,
+        event_date: e.event_date.toISOString(),
+        duration: e.duration,
+        max_participants: e.max_participants,
+        credit_points: e.credit_points,
+        bonus_points: e.bonus_points,
+        volunteer_points: e.volunteer_points || 3,
+        volunteers: e.volunteers,
+        club_id: e.club_id?._id,
+        coordinator_id: e.coordinator_id?._id,
+        created_at: e.created_at,
+        clubs: e.club_id ? { name: e.club_id.name, coordinators: e.club_id.coordinators || [] } : null,
+        profiles: e.coordinator_id ? { full_name: e.coordinator_id.full_name } : null,
+        registered_count: registeredCount,
+        attended_count: attendedCount
+      };
+    }));
+
+    res.json(eventsWithStats);
   } catch (error) {
-    res.status(500).json({ message: 'Server error fetching events' });
+    res.status(500).json({ message: 'Server error fetching events: ' + error.message });
   }
 });
 
@@ -252,6 +260,31 @@ router.get('/registrations/:eventId', authenticateToken, requireStaff, async (re
   }
 });
 
+// POST /api/events/volunteers/names (Fetch student names by roll numbers - Coordinator or Admin)
+router.post('/volunteers/names', authenticateToken, requireStaff, async (req, res) => {
+  const { rollNumbers } = req.body;
+  if (!rollNumbers || !Array.isArray(rollNumbers)) {
+    return res.status(400).json({ message: 'rollNumbers array is required' });
+  }
+
+  try {
+    const formattedRolls = rollNumbers.map(r => r.trim());
+    const users = await User.find({ 
+      role: 'student', 
+      roll_number: { $in: formattedRolls } 
+    }).select('roll_number full_name');
+
+    const nameMap = {};
+    users.forEach(u => {
+      nameMap[u.roll_number] = u.full_name;
+    });
+
+    res.json({ nameMap });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Server error fetching volunteer names' });
+  }
+});
+
 // POST /api/events/register (Register student for event)
 router.post('/register', authenticateToken, async (req, res) => {
   const { eventId } = req.body;
@@ -453,7 +486,8 @@ router.post('/certificates/generate', authenticateToken, async (req, res) => {
       creditPoints: reg.points_awarded || 2,
       certificateType: reg.is_volunteer ? 'volunteer' : 'participation', // set type
       certificateId: `${reg.is_volunteer ? 'VOL' : 'CERT'}-${reg._id.toString().substring(18).toUpperCase()}`,
-      issuedDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      issuedDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      coordinators: reg.event_id.club_id?.coordinators?.map(c => c.name).join(', ') || 'Club Coordinator'
     };
 
     res.json({ certificate: certData });
@@ -462,11 +496,27 @@ router.post('/certificates/generate', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/certificates/send-email (Stub / Mock email sending)
-router.post('/certificates/send-email', authenticateToken, async (req, res) => {
-  const { email, studentName, eventName } = req.body;
-  console.log(`[MOCK EMAIL] Sending certificate for "${eventName}" to ${studentName} (${email})`);
-  res.json({ message: 'Email sent successfully (mocked)' });
+// DELETE /api/events/:eventId (Delete event and registrations - Coordinator or Admin only)
+router.delete('/:eventId', authenticateToken, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Check authorization: only admin or the event's coordinator can delete
+    if (req.user.role !== 'admin' && event.coordinator_id.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden: You do not own this event' });
+    }
+
+    await Event.findByIdAndDelete(req.params.eventId);
+    // Also delete associated registrations
+    await EventRegistration.deleteMany({ event_id: req.params.eventId });
+
+    res.json({ message: 'Event and registrations deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Server error deleting event' });
+  }
 });
 
 export default router;

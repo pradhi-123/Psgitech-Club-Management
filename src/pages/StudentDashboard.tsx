@@ -297,12 +297,12 @@ const StudentDashboard = () => {
       doc.setFont('times', 'italic');
       doc.setFontSize(13);
       doc.setTextColor(15, 30, 54);
-      doc.text('Coordinator', 65, 154, { align: 'center' }); // Faux signature
+      doc.text(cert.coordinators || 'Club Coordinator', 65, 154, { align: 'center' }); // Faux signature
       
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(100, 110, 120);
-      doc.text('Club Coordinator', 65, 163, { align: 'center' });
+      doc.text('Club Coordinator(s)', 65, 163, { align: 'center' });
 
       // Right side: Principal
       doc.line(207, 158, 257, 158);
@@ -310,7 +310,7 @@ const StudentDashboard = () => {
       doc.setFont('times', 'italic');
       doc.setFontSize(13);
       doc.setTextColor(15, 30, 54);
-      doc.text('Dr. G. Chandramohan', 232, 154, { align: 'center' }); // Faux signature
+      doc.text('Dr. Saravanakumar', 232, 154, { align: 'center' }); // Faux signature
       
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
