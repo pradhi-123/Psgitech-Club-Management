@@ -14,7 +14,7 @@ import api from "@/lib/apiClient";
 import { ArrowLeft, Calendar, QrCode, FileText, CheckCircle, User, Phone, Mail, Award, Clock, Users, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { QRScanner } from "@/components/QRScanner";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import collegeLogo from "@/assets/college-logo.png";
 import PullToRefresh from "react-simple-pull-to-refresh";
 
@@ -78,7 +78,7 @@ const ManageEvent = () => {
       if (foundEvent.volunteers) {
         const rolls = foundEvent.volunteers.split(',').map((r: string) => r.trim()).filter((r: string) => r.length > 0);
         setVolunteerRolls(rolls);
-        
+
         try {
           const nameData = await api.post("/api/events/volunteers/names", { rollNumbers: rolls });
           setVolunteerNames(nameData.nameMap || {});
@@ -167,7 +167,7 @@ const ManageEvent = () => {
       const data = await api.post('/api/events/certificates/generate', { registrationId });
       if (data?.certificate) {
         const cert = data.certificate;
-        
+
         // Create PDF using jsPDF
         const pdf = new jsPDF({
           orientation: 'landscape',
@@ -209,7 +209,7 @@ const ManageEvent = () => {
         pdf.setFontSize(20);
         pdf.setTextColor(15, 30, 54);
         pdf.text('PSG Institute of Technology and Applied Research', 148.5, 40, { align: 'center' });
-        
+
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(10);
         pdf.setTextColor(100, 110, 120);
@@ -286,13 +286,13 @@ const ManageEvent = () => {
         pdf.setDrawColor(180, 185, 190);
         pdf.setLineWidth(0.4);
         pdf.line(40, 158, 90, 158);
-        
+
         pdf.setFont('times', 'italic');
         pdf.setFontSize(13);
         pdf.setTextColor(15, 30, 54);
         const coordNames = event?.clubs?.coordinators?.map((c: any) => c.name).join(', ') || profile?.full_name || 'Club Coordinator';
         pdf.text(coordNames, 65, 154, { align: 'center' });
-        
+
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(9);
         pdf.setTextColor(100, 110, 120);
@@ -308,7 +308,7 @@ const ManageEvent = () => {
         pdf.setFontSize(7.5);
         pdf.setTextColor(140, 145, 150);
         pdf.text(`Certificate ID: ${cert.certificateId}  |  Issued: ${cert.issuedDate}`, 148.5, 174, { align: 'center' });
-        
+
         // Open PDF in a new tab instead of download
         const blobUrl = pdf.output('bloburl');
         window.open(blobUrl, '_blank');
@@ -340,10 +340,10 @@ const ManageEvent = () => {
           <header className="bg-gradient-primary text-white shadow-lg">
             <div className="container mx-auto px-4 py-4 sm:py-6">
               <div className="flex items-center gap-3">
-                <Button 
-                  variant="secondary" 
-                  size="icon" 
-                  onClick={() => navigate("/coordinator")} 
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => navigate("/coordinator")}
                   className="rounded-full h-9 w-9 shrink-0"
                 >
                   <ArrowLeft className="w-4 h-4 text-primary" />
@@ -385,7 +385,7 @@ const ManageEvent = () => {
                         <SelectItem value="exit">Exit Scan</SelectItem>
                       </SelectContent>
                     </Select>
-                    
+
                     <Button onClick={() => setShowScanner(true)} className="gap-1.5 h-9 shrink-0 flex-1 sm:flex-initial">
                       <QrCode className="w-4 h-4" /> Start Scan
                     </Button>
@@ -434,9 +434,9 @@ const ManageEvent = () => {
                               </td>
                               <td className="p-4 text-right">
                                 {reg.attendance_confirmed && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => handleGenerateCertificate(reg.id)}
                                     className="h-8 gap-1 text-xs"
                                   >
@@ -496,17 +496,17 @@ const ManageEvent = () => {
                                 </td>
                                 <td className="p-4 text-right">
                                   {isConfirmed ? (
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline" 
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
                                       onClick={() => handleGenerateCertificate(reg.id)}
                                       className="h-8 gap-1 text-xs"
                                     >
                                       <Award className="w-3.5 h-3.5 text-amber-500" /> View Certificate
                                     </Button>
                                   ) : (
-                                    <Button 
-                                      size="sm" 
+                                    <Button
+                                      size="sm"
                                       onClick={() => handleConfirmVolunteer(roll)}
                                       className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white"
                                     >
@@ -551,7 +551,7 @@ const ManageEvent = () => {
                         rows={4}
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="edit-category">Category</Label>

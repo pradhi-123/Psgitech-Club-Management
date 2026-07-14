@@ -50,7 +50,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     if (coordinators && coordinators.length > 0) {
       for (const coord of coordinators) {
         console.log('[CREATE CLUB] Checking coordinator:', coord.email);
-        
+
         let existingUser = null;
         if (coord.roll_number) {
           existingUser = await User.findOne({ roll_number: coord.roll_number.toUpperCase().trim() });
@@ -131,7 +131,7 @@ router.put('/edit/:clubId', authenticateToken, requireAdmin, async (req, res) =>
     if (coordinators && coordinators.length > 0) {
       for (const coord of coordinators) {
         console.log('[EDIT CLUB] Checking coordinator:', coord.email);
-        
+
         let existingUser = null;
         if (coord.roll_number) {
           existingUser = await User.findOne({ roll_number: coord.roll_number.toUpperCase().trim() });
@@ -168,6 +168,10 @@ router.put('/edit/:clubId', authenticateToken, requireAdmin, async (req, res) =>
           existingUser.role = 'coordinator';
           existingUser.full_name = coord.name || existingUser.full_name;
           existingUser.phone = coord.phone || existingUser.phone || 'Unavailable';
+          // Sync email to user profile if admin provided a real email
+          if (coord.email && coord.email.trim() !== '' && coord.email !== 'Unavailable') {
+            existingUser.email = coord.email.toLowerCase().trim();
+          }
           if (coord.roll_number) {
             existingUser.roll_number = coord.roll_number.toUpperCase().trim();
           }

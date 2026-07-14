@@ -5,15 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import api from "@/lib/apiClient";
 import { Award, Calendar, LogOut, Trophy, Users, Download, User, Phone, Bell, BellOff, Trash2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QRCodeSVG } from "qrcode.react";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import collegeLogo from "@/assets/college-logo.png";
 import PullToRefresh from "react-simple-pull-to-refresh";
 
@@ -241,7 +242,7 @@ const StudentDashboard = () => {
       doc.setFontSize(20);
       doc.setTextColor(15, 30, 54); // Navy Blue
       doc.text('PSG Institute of Technology and Applied Research', 148.5, 40, { align: 'center' });
-      
+
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(100, 110, 120);
@@ -319,12 +320,12 @@ const StudentDashboard = () => {
       doc.setDrawColor(180, 185, 190);
       doc.setLineWidth(0.4);
       doc.line(40, 158, 90, 158);
-      
+
       doc.setFont('times', 'italic');
       doc.setFontSize(13);
       doc.setTextColor(15, 30, 54);
       doc.text(cert.coordinators || 'Club Coordinator', 65, 154, { align: 'center' }); // Faux signature
-      
+
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(100, 110, 120);
@@ -332,12 +333,12 @@ const StudentDashboard = () => {
 
       // Right side: Principal
       doc.line(207, 158, 257, 158);
-      
+
       doc.setFont('times', 'italic');
       doc.setFontSize(13);
       doc.setTextColor(15, 30, 54);
       doc.text('Dr. Saravanakumar', 232, 154, { align: 'center' }); // Faux signature
-      
+
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(100, 110, 120);
@@ -358,8 +359,8 @@ const StudentDashboard = () => {
 
   // Filter computations
   const filteredCatalogEvents = events.filter(e => {
-    const matchesSearch = e.name?.toLowerCase().includes(catalogSearch.toLowerCase()) || 
-                          e.description?.toLowerCase().includes(catalogSearch.toLowerCase());
+    const matchesSearch = e.name?.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+      e.description?.toLowerCase().includes(catalogSearch.toLowerCase());
     const matchesClub = catalogClubFilter === "all" || e.club_id === catalogClubFilter;
     return matchesSearch && matchesClub;
   });
@@ -514,13 +515,12 @@ const StudentDashboard = () => {
                   ].map((badge) => {
                     const isUnlocked = credits.total_points >= badge.points;
                     return (
-                      <div 
-                        key={badge.level} 
-                        className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${
-                          isUnlocked 
-                            ? "bg-card border-amber-500/30 shadow-md scale-100 opacity-100 hover:scale-105 hover:shadow-lg duration-300" 
-                            : "bg-muted/30 border-muted opacity-40 grayscale"
-                        }`}
+                      <div
+                        key={badge.level}
+                        className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${isUnlocked
+                          ? "bg-card border-amber-500/30 shadow-md scale-100 opacity-100 hover:scale-105 hover:shadow-lg duration-300"
+                          : "bg-muted/30 border-muted opacity-40 grayscale"
+                          }`}
                       >
                         <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${badge.color} text-white flex items-center justify-center text-xl shadow-inner mb-2`}>
                           {badge.icon}
@@ -712,11 +712,10 @@ const StudentDashboard = () => {
                               <Button
                                 variant={registration.is_volunteer ? "secondary" : "default"}
                                 size="sm"
-                                className={`gap-1.5 w-full sm:w-auto text-xs sm:text-sm ${
-                                  registration.is_volunteer 
-                                    ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600" 
-                                    : ""
-                                }`}
+                                className={`gap-1.5 w-full sm:w-auto text-xs sm:text-sm ${registration.is_volunteer
+                                  ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600"
+                                  : ""
+                                  }`}
                                 onClick={() => handleDownloadCertificate(registration)}
                               >
                                 <Download className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -786,7 +785,7 @@ const StudentDashboard = () => {
               Stay updated with recent club announcements and volunteer assignments.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="mt-4">
             {unreadCount === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground text-center">

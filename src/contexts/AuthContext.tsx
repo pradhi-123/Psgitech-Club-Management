@@ -11,6 +11,7 @@ interface Profile {
   department?: string;
   section?: string;
   year?: number;
+  phone?: string;
 }
 
 interface AuthContextType {

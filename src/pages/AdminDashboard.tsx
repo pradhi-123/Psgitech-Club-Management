@@ -506,8 +506,27 @@ const AdminDashboard = () => {
 
   const handleEditUser = (user: any) => {
     const fallbackPassword = user.plain_password || (user.role === "student" ? user.roll_number : "astro123");
+
+    // For coordinators, also check club coordinator data for the latest email
+    let bestEmail = user.email;
+    if (user.role === "coordinator" && user.roll_number) {
+      for (const club of clubs) {
+        const matched = club.coordinators?.find((c: any) =>
+          String(c.roll_number || '').toUpperCase().trim() === String(user.roll_number || '').toUpperCase().trim()
+        );
+        if (matched?.email && matched.email !== 'Unavailable') {
+          // Prefer the club's coordinator email if the user profile email is auto-generated or unavailable
+          if (!bestEmail || bestEmail === 'Unavailable' || bestEmail.endsWith('@psgitech.ac.in')) {
+            bestEmail = matched.email;
+          }
+          break;
+        }
+      }
+    }
+
     setEditingUser({
       ...user,
+      email: bestEmail,
       plain_password: fallbackPassword,
     });
   };
@@ -1110,16 +1129,22 @@ const AdminDashboard = () => {
                     <Card key={coordinator.id} className="shadow-card">
                       <CardHeader>
                         <div className="flex justify-between items-start">
-                          <div>
+                          <div className="space-y-1.5">
                             <CardTitle>{coordinator.full_name}</CardTitle>
-                            <CardDescription>
-                              {coordinator.roll_number || "No Roll"} • {coordinator.email && coordinator.email !== "Unavailable" ? coordinator.email : "No Email"}
-                            </CardDescription>
-                            <p className="text-xs text-muted-foreground">
-                              📞 {coordinator.phone && coordinator.phone !== "Unavailable" ? coordinator.phone : "No Phone"}
-                            </p>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <User className="w-3 h-3 text-primary shrink-0" />
+                              <span>{coordinator.roll_number || "No Roll Number"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Mail className="w-3 h-3 text-accent shrink-0" />
+                              <span className="break-all">{coordinator.email && coordinator.email !== "Unavailable" ? coordinator.email : "No Email"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Phone className="w-3 h-3 text-secondary shrink-0" />
+                              <span>{coordinator.phone && coordinator.phone !== "Unavailable" ? coordinator.phone : "No Phone"}</span>
+                            </div>
                             <p className="text-xs font-semibold text-primary mt-1">
-                              Club: {coordinator.club_name || "Unassigned"}
+                              🏛️ Club: {coordinator.club_name || "Unassigned"}
                             </p>
                           </div>
                           <div className="flex gap-2">
@@ -1265,12 +1290,25 @@ const AdminDashboard = () => {
                     <Card key={student.id} className="shadow-card">
                       <CardHeader>
                         <div className="flex justify-between items-start">
-                          <div>
+                          <div className="space-y-1.5">
                             <CardTitle>{student.full_name}</CardTitle>
-                            <CardDescription>
-                              {student.roll_number} • {student.department} • {student.section} • Year{" "}
-                              {student.year} • Phone: {student.phone || "Unavailable"}
-                            </CardDescription>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <User className="w-3 h-3 text-primary shrink-0" />
+                              <span>{student.roll_number || "No Roll Number"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <span>🏢 Department: {student.department || "N/A"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <span>📋 Section: {student.section || "N/A"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <span>📅 Year: {student.year || "N/A"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Phone className="w-3 h-3 text-secondary shrink-0" />
+                              <span>{student.phone && student.phone !== "Unavailable" ? student.phone : "No Phone"}</span>
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <Button

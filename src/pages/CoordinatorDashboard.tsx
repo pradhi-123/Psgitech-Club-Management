@@ -15,7 +15,7 @@ import api from "@/lib/apiClient";
 import { LogOut, Plus, Calendar, QrCode, FileText, CheckCircle, User, Phone, Bell, BellOff, Trash2, Mail, Trophy, Award, Download, Users } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import collegeLogo from "@/assets/college-logo.png";
 import PullToRefresh from "react-simple-pull-to-refresh";
 
@@ -149,7 +149,7 @@ const CoordinatorDashboard = () => {
       ]);
 
       // Filter clubs where this coordinator's email matches one of the coordinators
-      const myClubsFiltered = clubsData?.filter((club: any) => 
+      const myClubsFiltered = clubsData?.filter((club: any) =>
         club.coordinators?.some((c: any) => {
           const coordRoll = String(c.roll_number || '').toUpperCase().trim();
           const coordEmail = String(c.email || '').toLowerCase().trim();
@@ -239,7 +239,7 @@ const CoordinatorDashboard = () => {
       e.registered_count || 0,
       e.attended_count || 0
     ]);
-    
+
     const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -297,7 +297,7 @@ const CoordinatorDashboard = () => {
     try {
       const data = await api.post("/api/events/certificates/generate", { registrationId: registration.id });
       const cert = data.certificate;
-      
+
       const doc = new jsPDF({
         orientation: "landscape",
         unit: "mm",
@@ -338,7 +338,7 @@ const CoordinatorDashboard = () => {
       doc.setFontSize(20);
       doc.setTextColor(15, 30, 54);
       doc.text('PSG Institute of Technology and Applied Research', 148.5, 40, { align: 'center' });
-      
+
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(100, 110, 120);
@@ -372,7 +372,7 @@ const CoordinatorDashboard = () => {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11);
       doc.setTextColor(60, 65, 70);
-      const subDetails = cert.rollNumber 
+      const subDetails = cert.rollNumber
         ? `Roll No: ${cert.rollNumber}  |  Dept: ${cert.department}  |  Year: ${cert.year}  |  Section: ${cert.section}`
         : `Email: ${cert.email || 'N/A'}  |  Role: Coordinator`;
       doc.text(subDetails, 148.5, 97, { align: 'center' });
@@ -413,12 +413,12 @@ const CoordinatorDashboard = () => {
       doc.setDrawColor(180, 185, 190);
       doc.setLineWidth(0.4);
       doc.line(40, 158, 90, 158);
-      
+
       doc.setFont('times', 'italic');
       doc.setFontSize(13);
       doc.setTextColor(15, 30, 54);
       doc.text(cert.coordinators || 'Club Coordinator', 65, 154, { align: 'center' });
-      
+
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(100, 110, 120);
@@ -450,15 +450,15 @@ const CoordinatorDashboard = () => {
 
   // Filter computations
   const filteredMyEvents = myEvents.filter(e => {
-    const matchesSearch = e.name?.toLowerCase().includes(myEventsSearch.toLowerCase()) || 
-                          e.description?.toLowerCase().includes(myEventsSearch.toLowerCase());
+    const matchesSearch = e.name?.toLowerCase().includes(myEventsSearch.toLowerCase()) ||
+      e.description?.toLowerCase().includes(myEventsSearch.toLowerCase());
     const matchesCategory = myEventsCategoryFilter === "all" || e.category === myEventsCategoryFilter;
     return matchesSearch && matchesCategory;
   });
 
   const filteredParticipateEvents = participateEvents.filter(e => {
-    const matchesSearch = e.name?.toLowerCase().includes(participateSearch.toLowerCase()) || 
-                          e.description?.toLowerCase().includes(participateSearch.toLowerCase());
+    const matchesSearch = e.name?.toLowerCase().includes(participateSearch.toLowerCase()) ||
+      e.description?.toLowerCase().includes(participateSearch.toLowerCase());
     const matchesClub = participateClubFilter === "all" || e.club_id === participateClubFilter;
     return matchesSearch && matchesClub;
   });
@@ -547,7 +547,7 @@ const CoordinatorDashboard = () => {
                   </Dialog>
 
                   <Button onClick={signOut} variant="secondary" size="sm" className="gap-1.5 sm:gap-2">
-                    <LogOut className="w-3 h-3 sm:w-4 sm:h-4" /> 
+                    <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">Logout</span>
                     <span className="sm:hidden">Exit</span>
                   </Button>
@@ -624,166 +624,166 @@ const CoordinatorDashboard = () => {
                             <Plus className="w-4 h-4" /> Create Event
                           </Button>
                         </DialogTrigger>
-                      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Create New Event</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="event-name">Event Name *</Label>
-                            <Input
-                              id="event-name"
-                              value={eventForm.name}
-                              onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
-                              placeholder="Enter event name"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="event-description">Description</Label>
-                            <Textarea
-                              id="event-description"
-                              value={eventForm.description}
-                              onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                              placeholder="Enter event description"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="event-club">Club *</Label>
-                            <Select value={eventForm.club_id} onValueChange={(value) => setEventForm({ ...eventForm, club_id: value })}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a club" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {myClubs.map((club) => (
-                                  <SelectItem key={club.id} value={club.id}>
-                                    {club.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label htmlFor="event-category">Category</Label>
-                            <Select value={eventForm.category} onValueChange={(value: any) => setEventForm({ ...eventForm, category: value })}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Cultural">Cultural</SelectItem>
-                                <SelectItem value="Technical">Technical</SelectItem>
-                                <SelectItem value="Sports">Sports</SelectItem>
-                                <SelectItem value="Competition">Competition</SelectItem>
-                                <SelectItem value="Workshop">Workshop</SelectItem>
-                                <SelectItem value="Quiz">Quiz</SelectItem>
-                                <SelectItem value="Guest Lecture">Guest Lecture</SelectItem>
-                                <SelectItem value="Other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Create New Event</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
                             <div>
-                              <Label htmlFor="event-date">Event Date & Time *</Label>
+                              <Label htmlFor="event-name">Event Name *</Label>
                               <Input
-                                id="event-date"
-                                type="datetime-local"
-                                value={eventForm.event_date}
-                                onChange={(e) => setEventForm({ ...eventForm, event_date: e.target.value })}
+                                id="event-name"
+                                value={eventForm.name}
+                                onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
+                                placeholder="Enter event name"
                               />
                             </div>
                             <div>
-                              <Label htmlFor="event-duration">Duration (minutes)</Label>
-                              <Input
-                                id="event-duration"
-                                type="number"
-                                value={eventForm.duration}
-                                onChange={(e) => setEventForm({ ...eventForm, duration: parseInt(e.target.value) })}
+                              <Label htmlFor="event-description">Description</Label>
+                              <Textarea
+                                id="event-description"
+                                value={eventForm.description}
+                                onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                                placeholder="Enter event description"
                               />
                             </div>
+                            <div>
+                              <Label htmlFor="event-club">Club *</Label>
+                              <Select value={eventForm.club_id} onValueChange={(value) => setEventForm({ ...eventForm, club_id: value })}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a club" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {myClubs.map((club) => (
+                                    <SelectItem key={club.id} value={club.id}>
+                                      {club.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label htmlFor="event-category">Category</Label>
+                              <Select value={eventForm.category} onValueChange={(value: any) => setEventForm({ ...eventForm, category: value })}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Cultural">Cultural</SelectItem>
+                                  <SelectItem value="Technical">Technical</SelectItem>
+                                  <SelectItem value="Sports">Sports</SelectItem>
+                                  <SelectItem value="Competition">Competition</SelectItem>
+                                  <SelectItem value="Workshop">Workshop</SelectItem>
+                                  <SelectItem value="Quiz">Quiz</SelectItem>
+                                  <SelectItem value="Guest Lecture">Guest Lecture</SelectItem>
+                                  <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="event-date">Event Date & Time *</Label>
+                                <Input
+                                  id="event-date"
+                                  type="datetime-local"
+                                  value={eventForm.event_date}
+                                  onChange={(e) => setEventForm({ ...eventForm, event_date: e.target.value })}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="event-duration">Duration (minutes)</Label>
+                                <Input
+                                  id="event-duration"
+                                  type="number"
+                                  value={eventForm.duration}
+                                  onChange={(e) => setEventForm({ ...eventForm, duration: parseInt(e.target.value) })}
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="max-participants">Max Participants</Label>
+                                <Input
+                                  id="max-participants"
+                                  type="number"
+                                  value={eventForm.max_participants}
+                                  onChange={(e) => setEventForm({ ...eventForm, max_participants: e.target.value })}
+                                  placeholder="Leave empty for unlimited"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="credit-points">Credit Points</Label>
+                                <Input
+                                  id="credit-points"
+                                  type="number"
+                                  value={eventForm.credit_points}
+                                  onChange={(e) => setEventForm({ ...eventForm, credit_points: parseInt(e.target.value) })}
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="volunteer-points">Volunteer Credits</Label>
+                                <Input
+                                  id="volunteer-points"
+                                  type="number"
+                                  value={eventForm.volunteer_points}
+                                  onChange={(e) => setEventForm({ ...eventForm, volunteer_points: parseInt(e.target.value) || 3 })}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="event-volunteers">Volunteers</Label>
+                                <Input
+                                  id="event-volunteers"
+                                  value={eventForm.volunteers}
+                                  onChange={(e) => setEventForm({ ...eventForm, volunteers: e.target.value })}
+                                  placeholder="e.g. 22AD001, 22AD002"
+                                />
+                              </div>
+                            </div>
+                            <Button onClick={handleCreateEvent} className="w-full bg-gradient-primary">
+                              Create Event
+                            </Button>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="max-participants">Max Participants</Label>
-                              <Input
-                                id="max-participants"
-                                type="number"
-                                value={eventForm.max_participants}
-                                onChange={(e) => setEventForm({ ...eventForm, max_participants: e.target.value })}
-                                placeholder="Leave empty for unlimited"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="credit-points">Credit Points</Label>
-                              <Input
-                                id="credit-points"
-                                type="number"
-                                value={eventForm.credit_points}
-                                onChange={(e) => setEventForm({ ...eventForm, credit_points: parseInt(e.target.value) })}
-                              />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="volunteer-points">Volunteer Credits</Label>
-                              <Input
-                                id="volunteer-points"
-                                type="number"
-                                value={eventForm.volunteer_points}
-                                onChange={(e) => setEventForm({ ...eventForm, volunteer_points: parseInt(e.target.value) || 3 })}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="event-volunteers">Volunteers</Label>
-                              <Input
-                                id="event-volunteers"
-                                value={eventForm.volunteers}
-                                onChange={(e) => setEventForm({ ...eventForm, volunteers: e.target.value })}
-                                placeholder="e.g. 22AD001, 22AD002"
-                              />
-                            </div>
-                          </div>
-                          <Button onClick={handleCreateEvent} className="w-full bg-gradient-primary">
-                            Create Event
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 pb-3 w-full sm:max-w-2xl">
-                  <Input
-                    placeholder="Search my events by name or description..."
-                    value={myEventsSearch}
-                    onChange={(e) => setMyEventsSearch(e.target.value)}
-                    className="bg-white/80 backdrop-blur-sm border-slate-200 flex-1"
-                  />
-                  <Select value={myEventsCategoryFilter} onValueChange={setMyEventsCategoryFilter}>
-                    <SelectTrigger className="w-full sm:w-[180px] bg-white/80 backdrop-blur-sm">
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="Cultural">Cultural</SelectItem>
-                      <SelectItem value="Technical">Technical</SelectItem>
-                      <SelectItem value="Sports">Sports</SelectItem>
-                      <SelectItem value="Competition">Competition</SelectItem>
-                      <SelectItem value="Workshop">Workshop</SelectItem>
-                      <SelectItem value="Quiz">Quiz</SelectItem>
-                      <SelectItem value="Guest Lecture">Guest Lecture</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="flex flex-col sm:flex-row gap-3 pb-3 w-full sm:max-w-2xl">
+                    <Input
+                      placeholder="Search my events by name or description..."
+                      value={myEventsSearch}
+                      onChange={(e) => setMyEventsSearch(e.target.value)}
+                      className="bg-white/80 backdrop-blur-sm border-slate-200 flex-1"
+                    />
+                    <Select value={myEventsCategoryFilter} onValueChange={setMyEventsCategoryFilter}>
+                      <SelectTrigger className="w-full sm:w-[180px] bg-white/80 backdrop-blur-sm">
+                        <SelectValue placeholder="Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="Cultural">Cultural</SelectItem>
+                        <SelectItem value="Technical">Technical</SelectItem>
+                        <SelectItem value="Sports">Sports</SelectItem>
+                        <SelectItem value="Competition">Competition</SelectItem>
+                        <SelectItem value="Workshop">Workshop</SelectItem>
+                        <SelectItem value="Quiz">Quiz</SelectItem>
+                        <SelectItem value="Guest Lecture">Guest Lecture</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredMyEvents.length === 0 ? (
-                    <Card className="col-span-full bg-white/70 border border-white/50 backdrop-blur-sm">
-                      <CardContent className="py-6 sm:py-8 text-center text-sm sm:text-base text-muted-foreground">
-                        No events found matching your search.
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    filteredMyEvents.map((event) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredMyEvents.length === 0 ? (
+                      <Card className="col-span-full bg-white/70 border border-white/50 backdrop-blur-sm">
+                        <CardContent className="py-6 sm:py-8 text-center text-sm sm:text-base text-muted-foreground">
+                          No events found matching your search.
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      filteredMyEvents.map((event) => (
                         <Card key={event.id} className={`bg-white/70 border border-white/50 border-l-4 ${event.category?.toLowerCase() === 'technical' ? 'border-l-blue-500' : event.category?.toLowerCase() === 'cultural' ? 'border-l-purple-500' : event.category?.toLowerCase() === 'sports' ? 'border-l-emerald-500' : 'border-l-amber-500'} backdrop-blur-sm shadow-card hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between`}>
                           <CardHeader className="pb-3 sm:pb-4">
                             <div className="flex justify-between items-start gap-2">
@@ -795,8 +795,8 @@ const CoordinatorDashboard = () => {
                                 </CardDescription>
                               </div>
                               <div className="flex gap-1.5 shrink-0">
-                                <Button 
-                                  variant="outline" 
+                                <Button
+                                  variant="outline"
                                   size="sm"
                                   onClick={() => navigate(`/coordinator/manage-event/${event.id}`)}
                                   className="text-xs h-8 shadow-sm border-slate-200 bg-white/80 hover:bg-white"
@@ -895,13 +895,12 @@ const CoordinatorDashboard = () => {
                       ].map((badge) => {
                         const isUnlocked = credits.total_points >= badge.points;
                         return (
-                          <div 
-                            key={badge.level} 
-                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${
-                              isUnlocked 
-                                ? "bg-card border-amber-500/30 shadow-md scale-100 opacity-100 hover:scale-105 hover:shadow-lg duration-300" 
+                          <div
+                            key={badge.level}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${isUnlocked
+                                ? "bg-card border-amber-500/30 shadow-md scale-100 opacity-100 hover:scale-105 hover:shadow-lg duration-300"
                                 : "bg-muted/30 border-muted opacity-40 grayscale"
-                            }`}
+                              }`}
                           >
                             <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${badge.color} text-white flex items-center justify-center text-xl shadow-inner mb-2`}>
                               {badge.icon}
@@ -965,36 +964,36 @@ const CoordinatorDashboard = () => {
                         filteredParticipateEvents
                           .filter(e => new Date(e.event_date) >= new Date())
                           .map((event) => (
-                          <Card key={event.id} className={`bg-white/70 border border-white/50 border-l-4 ${event.category?.toLowerCase() === 'technical' ? 'border-l-blue-500' : event.category?.toLowerCase() === 'cultural' ? 'border-l-purple-500' : event.category?.toLowerCase() === 'sports' ? 'border-l-emerald-500' : 'border-l-amber-500'} backdrop-blur-sm shadow-card hover:shadow-button hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between`}>
-                            <CardHeader className="pb-3">
-                              <div className="flex justify-between items-start gap-2">
-                                <div className="min-w-0 flex-1">
-                                  <CardTitle className="text-base sm:text-lg truncate">{event.name}</CardTitle>
-                                  <CardDescription className="flex items-center gap-1 mt-1 text-xs sm:text-sm">
-                                    <Users className="w-3.5 h-3.5 text-primary shrink-0" />
-                                    <span className="truncate">{event.clubs?.name}</span>
-                                  </CardDescription>
+                            <Card key={event.id} className={`bg-white/70 border border-white/50 border-l-4 ${event.category?.toLowerCase() === 'technical' ? 'border-l-blue-500' : event.category?.toLowerCase() === 'cultural' ? 'border-l-purple-500' : event.category?.toLowerCase() === 'sports' ? 'border-l-emerald-500' : 'border-l-amber-500'} backdrop-blur-sm shadow-card hover:shadow-button hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between`}>
+                              <CardHeader className="pb-3">
+                                <div className="flex justify-between items-start gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <CardTitle className="text-base sm:text-lg truncate">{event.name}</CardTitle>
+                                    <CardDescription className="flex items-center gap-1 mt-1 text-xs sm:text-sm">
+                                      <Users className="w-3.5 h-3.5 text-primary shrink-0" />
+                                      <span className="truncate">{event.clubs?.name}</span>
+                                    </CardDescription>
+                                  </div>
+                                  <Badge className="bg-gradient-primary text-white text-xs shrink-0">{event.category}</Badge>
                                 </div>
-                                <Badge className="bg-gradient-primary text-white text-xs shrink-0">{event.category}</Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="space-y-3 mt-auto">
-                              <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">{event.description}</p>
-                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-t border-slate-100 pt-2">
-                                <div className="text-[11px] sm:text-xs text-slate-500">
-                                  <p className="font-semibold text-slate-700">{new Date(event.event_date).toLocaleDateString()} at {new Date(event.event_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                  <p>{event.duration} mins • {event.credit_points} pts</p>
+                              </CardHeader>
+                              <CardContent className="space-y-3 mt-auto">
+                                <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">{event.description}</p>
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-t border-slate-100 pt-2">
+                                  <div className="text-[11px] sm:text-xs text-slate-500">
+                                    <p className="font-semibold text-slate-700">{new Date(event.event_date).toLocaleDateString()} at {new Date(event.event_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                    <p>{event.duration} mins • {event.credit_points} pts</p>
+                                  </div>
+                                  <Button size="sm" onClick={() => showConfirmRegisterDialog(event.id)} className="w-full sm:w-auto bg-gradient-primary">
+                                    Register
+                                  </Button>
                                 </div>
-                                <Button size="sm" onClick={() => showConfirmRegisterDialog(event.id)} className="w-full sm:w-auto bg-gradient-primary">
-                                  Register
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))
-                    )}
-                  </div>
-                </TabsContent>
+                              </CardContent>
+                            </Card>
+                          ))
+                      )}
+                    </div>
+                  </TabsContent>
 
                   {/* Clubs Catalog */}
                   <TabsContent value="clubs" className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1136,7 +1135,7 @@ const CoordinatorDashboard = () => {
               Keep track of recent events you or other coordinators have published.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="mt-4">
             {unreadCount === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground text-center">
