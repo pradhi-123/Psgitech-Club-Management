@@ -261,4 +261,80 @@ router.delete('/users/:id', authenticateToken, requireAdmin, async (req, res) =>
   }
 });
 
+// POST /api/users/bulk (Bulk import students - Admin only)
+router.post('/users/bulk', authenticateToken, requireAdmin, async (req, res) => {
+  const { students } = req.body;
+
+  if (!Array.isArray(students)) {
+    return res.status(400).json({ message: 'Invalid payload: students must be an array' });
+  }
+
+  try {
+    let createdCount = 0;
+    let skippedCount = 0;
+    const skippedStudents = [];
+
+    for (const student of students) {
+      const { full_name, roll_number, email, department, section, year, phone } = student;
+
+      if (!roll_number || !email || !full_name) {
+        skippedCount++;
+        skippedStudents.push({ roll_number, email, reason: 'Missing required fields (roll_number, email, full_name)' });
+        continue;
+      }
+
+      // Check if user already exists
+      const existing = await User.findOne({
+        $or: [
+          { email: email.toLowerCase().trim() },
+          { roll_number: roll_number.toUpperCase().trim() }
+        ]
+      });
+
+      if (existing) {
+        skippedCount++;
+        skippedStudents.push({ roll_number, email, reason: 'Student with this email or roll number already exists' });
+        continue;
+      }
+
+      // Hash password (use roll_number as default password, just like single student registration)
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(roll_number.toUpperCase().trim(), salt);
+
+      // Create student user
+      const newUser = await User.create({
+        email: email.toLowerCase().trim(),
+        password: hashedPassword,
+        plain_password: roll_number.toUpperCase().trim(),
+        full_name: full_name.trim(),
+        role: 'student',
+        roll_number: roll_number.toUpperCase().trim(),
+        department: department ? department.trim() : undefined,
+        section: section ? section.trim() : undefined,
+        year: year ? parseInt(year) : 1,
+        phone: phone ? phone.trim() : undefined
+      });
+
+      // Initialize credits
+      await StudentCredits.create({
+        student_id: newUser._id,
+        total_points: 0,
+        events_attended: 0,
+        badges_earned: 0
+      });
+
+      createdCount++;
+    }
+
+    res.status(201).json({
+      message: 'Bulk import completed successfully',
+      createdCount,
+      skippedCount,
+      skippedStudents
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Server error during bulk import' });
+  }
+});
+
 export default router;

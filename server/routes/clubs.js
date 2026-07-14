@@ -50,7 +50,6 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     if (coordinators && coordinators.length > 0) {
       for (const coord of coordinators) {
         console.log('[CREATE CLUB] Checking coordinator:', coord.email, 'has password:', !!coord.password);
-        if (coord.email && coord.password) {
           const existingUser = await User.findOne({ email: coord.email.toLowerCase().trim() });
           console.log('[CREATE CLUB] Existing user check:', coord.email, 'found:', !!existingUser);
           if (!existingUser) {
@@ -65,6 +64,17 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
               phone: coord.phone || ''
             });
             console.log('[CREATE CLUB] Created User account:', newUser._id);
+          } else {
+            existingUser.role = 'coordinator';
+            existingUser.full_name = coord.name || existingUser.full_name;
+            existingUser.phone = coord.phone || existingUser.phone || '';
+            if (coord.password && coord.password.trim() !== '') {
+              const salt = await bcrypt.genSalt(10);
+              existingUser.password = await bcrypt.hash(coord.password, salt);
+              existingUser.plain_password = coord.password;
+            }
+            await existingUser.save();
+            console.log('[CREATE CLUB] Updated existing User to coordinator:', existingUser._id);
           }
         }
       }
@@ -119,7 +129,8 @@ router.put('/edit/:clubId', authenticateToken, requireAdmin, async (req, res) =>
               console.log('[EDIT CLUB] Created User account:', newUser._id);
             }
           } else {
-            // Update existing user properties
+            // Update existing user properties and set role to coordinator
+            existingUser.role = 'coordinator';
             existingUser.full_name = coord.name || existingUser.full_name;
             existingUser.phone = coord.phone !== undefined ? coord.phone : existingUser.phone;
             if (coord.password && coord.password.trim() !== '') {
@@ -128,7 +139,7 @@ router.put('/edit/:clubId', authenticateToken, requireAdmin, async (req, res) =>
               existingUser.plain_password = coord.password;
             }
             await existingUser.save();
-            console.log('[EDIT CLUB] Updated existing User account:', existingUser._id);
+            console.log('[EDIT CLUB] Updated existing User account to coordinator:', existingUser._id);
           }
         }
       }
