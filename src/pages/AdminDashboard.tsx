@@ -35,13 +35,14 @@ const AdminDashboard = () => {
 
   // Form states
   const [clubForm, setClubForm] = useState({ name: "", description: "" });
-  const [clubCoordinators, setClubCoordinators] = useState([{ name: "", phone: "", email: "", password: "" }]);
+  const [clubCoordinators, setClubCoordinators] = useState([{ name: "", phone: "", email: "", password: "", roll_number: "" }]);
   const [coordinatorForm, setCoordinatorForm] = useState({
     full_name: "",
     phone: "",
     email: "",
     password: "",
     club_id: "",
+    roll_number: "",
   });
   const [studentForm, setStudentForm] = useState({
     full_name: "",
@@ -58,7 +59,7 @@ const AdminDashboard = () => {
   const [isEditClubDialogOpen, setIsEditClubDialogOpen] = useState(false);
   const [selectedClubToEdit, setSelectedClubToEdit] = useState<any>(null);
   const [editClubForm, setEditClubForm] = useState({ name: "", description: "" });
-  const [editClubCoordinators, setEditClubCoordinators] = useState([{ name: "", phone: "", email: "", password: "" }]);
+  const [editClubCoordinators, setEditClubCoordinators] = useState([{ name: "", phone: "", email: "", password: "", roll_number: "" }]);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
   const [visibleEditPasswords, setVisibleEditPasswords] = useState<Record<number, boolean>>({});
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -257,19 +258,24 @@ const AdminDashboard = () => {
   };
 
   const handleAddCoordinator = async () => {
+    if (!coordinatorForm.roll_number || !coordinatorForm.password || !coordinatorForm.full_name) {
+      toast.error("Please enter a roll number and password for the coordinator");
+      return;
+    }
     try {
       await api.post("/api/auth/users", {
-        email: coordinatorForm.email,
+        email: coordinatorForm.email || `${coordinatorForm.roll_number.toLowerCase()}@psgitech.ac.in`,
         password: coordinatorForm.password,
         full_name: coordinatorForm.full_name,
         role: "coordinator",
         club_id: coordinatorForm.club_id,
         phone: coordinatorForm.phone,
+        roll_number: coordinatorForm.roll_number.toUpperCase().trim()
       });
 
       toast.success("Coordinator added successfully!");
       setIsAddCoordinatorOpen(false);
-      setCoordinatorForm({ full_name: "", phone: "", email: "", password: "", club_id: "" });
+      setCoordinatorForm({ full_name: "", phone: "", email: "", password: "", club_id: "", roll_number: "" });
       fetchData();
     } catch (error: any) {
       toast.error("Failed to add coordinator: " + error.message);
@@ -277,13 +283,13 @@ const AdminDashboard = () => {
   };
 
   const handleAddStudent = async () => {
-    if (!studentForm.full_name || !studentForm.roll_number || !studentForm.email) {
-      toast.error("Please fill in all required fields (Full Name, Roll Number, and Email)");
+    if (!studentForm.full_name || !studentForm.roll_number) {
+      toast.error("Please fill in all required fields (Full Name and Roll Number)");
       return;
     }
     try {
       await api.post("/api/auth/users", {
-        email: studentForm.email,
+        email: studentForm.email || `${studentForm.roll_number.toLowerCase()}@psgitech.ac.in`,
         password: studentForm.roll_number,
         full_name: studentForm.full_name,
         role: "student",
@@ -693,43 +699,48 @@ const AdminDashboard = () => {
                                   </Button>
                                 )}
                                 <div className="space-y-1">
-                                  <Label className="text-xs">Select Coordinator *</Label>
-                                  <select
-                                    value={coord.email || ""}
+                                  <Label className="text-xs">Student Roll Number *</Label>
+                                  <Input
+                                    value={coord.roll_number || ""}
                                     onChange={(e) => {
-                                      const selectedEmail = e.target.value;
-                                      const foundUser = [...students, ...coordinators].find(u => u.email?.toLowerCase() === selectedEmail.toLowerCase());
+                                      const inputRoll = e.target.value.toUpperCase();
+                                      handleCoordinatorChange(index, 'roll_number', inputRoll);
+                                      
+                                      const foundUser = [...students, ...coordinators].find(
+                                        u => u.roll_number?.toUpperCase().trim() === inputRoll.trim()
+                                      );
                                       if (foundUser) {
                                         handleCoordinatorChange(index, 'name', foundUser.full_name);
-                                        handleCoordinatorChange(index, 'email', foundUser.email);
+                                        handleCoordinatorChange(index, 'email', foundUser.email || `${inputRoll.toLowerCase()}@psgitech.ac.in`);
                                         handleCoordinatorChange(index, 'phone', foundUser.phone || "");
-                                        handleCoordinatorChange(index, 'password', foundUser.plain_password || foundUser.roll_number || "");
+                                        if (!coord.password) {
+                                          handleCoordinatorChange(index, 'password', foundUser.plain_password || foundUser.roll_number || "");
+                                        }
                                       } else {
                                         handleCoordinatorChange(index, 'name', "");
-                                        handleCoordinatorChange(index, 'email', "");
+                                        handleCoordinatorChange(index, 'email', `${inputRoll.toLowerCase()}@psgitech.ac.in`);
                                         handleCoordinatorChange(index, 'phone', "");
-                                        handleCoordinatorChange(index, 'password', "");
                                       }
                                     }}
-                                    className="w-full h-8 text-xs rounded-md border border-input bg-background px-3 py-1 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                  >
-                                    <option value="">Select from Student/Coordinator list...</option>
-                                    {[...students, ...coordinators]
-                                      .filter((user, idx, self) => self.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase()) === idx)
-                                      .sort((a, b) => a.full_name.localeCompare(b.full_name))
-                                      .map(user => (
-                                        <option key={user.id || user._id} value={user.email}>
-                                          {user.full_name} ({user.roll_number || "No Roll"}) - {user.role === 'coordinator' ? 'Coordinator' : 'Student'}
-                                        </option>
-                                      ))
-                                    }
-                                  </select>
+                                    placeholder="Enter Student Roll Number"
+                                    className="h-8 text-xs"
+                                  />
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 text-xs pt-1 text-slate-500 border-t border-dashed mt-2">
-                                  <div><span className="font-semibold text-slate-600">Name:</span> {coord.name || "-"}</div>
-                                  <div><span className="font-semibold text-slate-600">Email:</span> {coord.email || "-"}</div>
-                                  <div><span className="font-semibold text-slate-600">Phone:</span> {coord.phone || "-"}</div>
-                                  <div><span className="font-semibold text-slate-600">Password:</span> {coord.password || "-"}</div>
+                                {coord.name && (
+                                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 text-slate-500 border-t border-dashed mt-2">
+                                    <div><span className="font-semibold text-slate-600">Name:</span> {coord.name}</div>
+                                    <div><span className="font-semibold text-slate-600">Phone:</span> {coord.phone || "-"}</div>
+                                  </div>
+                                )}
+                                <div className="space-y-1 mt-2">
+                                  <Label className="text-xs">Set Password *</Label>
+                                  <Input
+                                    type="text"
+                                    value={coord.password || ""}
+                                    onChange={(e) => handleCoordinatorChange(index, 'password', e.target.value)}
+                                    placeholder="Set password for coordinator"
+                                    className="h-8 text-xs"
+                                  />
                                 </div>
                               </div>
                             ))}
@@ -824,44 +835,51 @@ const AdminDashboard = () => {
                         <DialogTitle>Add New Coordinator</DialogTitle>
                         <DialogDescription>Create a coordinator and assign to a club</DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4">
+                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label>Full Name</Label>
+                          <Label>Student Roll Number *</Label>
                           <Input
-                            value={coordinatorForm.full_name}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              setCoordinatorForm({ ...coordinatorForm, full_name: e.target.value })
-                            }
+                            value={coordinatorForm.roll_number || ""}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                              const inputRoll = e.target.value.toUpperCase();
+                              const foundStudent = students.find(s => s.roll_number?.toUpperCase().trim() === inputRoll.trim());
+                              if (foundStudent) {
+                                setCoordinatorForm({
+                                  ...coordinatorForm,
+                                  roll_number: inputRoll,
+                                  full_name: foundStudent.full_name,
+                                  phone: foundStudent.phone || "",
+                                  email: foundStudent.email || `${inputRoll.toLowerCase()}@psgitech.ac.in`,
+                                  password: coordinatorForm.password || foundStudent.plain_password || foundStudent.roll_number || ""
+                                });
+                              } else {
+                                setCoordinatorForm({
+                                  ...coordinatorForm,
+                                  roll_number: inputRoll,
+                                  full_name: "",
+                                  phone: "",
+                                  email: `${inputRoll.toLowerCase()}@psgitech.ac.in`
+                                });
+                              }
+                            }}
+                            placeholder="Enter Student Roll Number"
                           />
                         </div>
+                        {coordinatorForm.full_name && (
+                          <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-3 rounded-lg border border-dashed text-slate-500">
+                            <div><span className="font-semibold text-slate-600">Full Name:</span> {coordinatorForm.full_name}</div>
+                            <div><span className="font-semibold text-slate-600">Phone:</span> {coordinatorForm.phone || "-"}</div>
+                          </div>
+                        )}
                         <div className="space-y-2">
-                          <Label>Phone Number</Label>
+                          <Label>Set Password *</Label>
                           <Input
-                            type="tel"
-                            value={coordinatorForm.phone}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              setCoordinatorForm({ ...coordinatorForm, phone: e.target.value })
-                            }
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Email</Label>
-                          <Input
-                            type="email"
-                            value={coordinatorForm.email}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              setCoordinatorForm({ ...coordinatorForm, email: e.target.value })
-                            }
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Password</Label>
-                          <Input
-                            type="password"
+                            type="text"
                             value={coordinatorForm.password}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                               setCoordinatorForm({ ...coordinatorForm, password: e.target.value })
                             }
+                            placeholder="Set password for coordinator"
                           />
                         </div>
                         <div className="space-y-2">
@@ -920,7 +938,7 @@ const AdminDashboard = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <CardTitle>{coordinator.full_name}</CardTitle>
-                            <CardDescription>{coordinator.email} {coordinator.phone && `• ${coordinator.phone}`}</CardDescription>
+                            <CardDescription>{coordinator.roll_number || "No Roll"} {coordinator.phone && `• ${coordinator.phone}`}</CardDescription>
                             <p className="text-xs font-semibold text-primary mt-1">
                               Club: {coordinator.club_name || "Unassigned"}
                             </p>
@@ -1148,7 +1166,7 @@ const AdminDashboard = () => {
                           <div>
                             <CardTitle>{student.full_name}</CardTitle>
                             <CardDescription>
-                              {student.email} • {student.roll_number} • {student.department} • {student.section} • Year{" "}
+                              {student.roll_number} • {student.department} • {student.section} • Year{" "}
                               {student.year}
                             </CardDescription>
                           </div>
@@ -1505,43 +1523,48 @@ const AdminDashboard = () => {
                       </Button>
                     )}
                     <div className="space-y-1">
-                      <Label className="text-xs">Select Coordinator *</Label>
-                      <select
-                        value={coord.email || ""}
+                      <Label className="text-xs">Student Roll Number *</Label>
+                      <Input
+                        value={coord.roll_number || ""}
                         onChange={(e) => {
-                          const selectedEmail = e.target.value;
-                          const foundUser = [...students, ...coordinators].find(u => u.email?.toLowerCase() === selectedEmail.toLowerCase());
+                          const inputRoll = e.target.value.toUpperCase();
+                          handleEditCoordinatorChange(index, 'roll_number', inputRoll);
+                          
+                          const foundUser = [...students, ...coordinators].find(
+                            u => u.roll_number?.toUpperCase().trim() === inputRoll.trim()
+                          );
                           if (foundUser) {
                             handleEditCoordinatorChange(index, 'name', foundUser.full_name);
-                            handleEditCoordinatorChange(index, 'email', foundUser.email);
+                            handleEditCoordinatorChange(index, 'email', foundUser.email || `${inputRoll.toLowerCase()}@psgitech.ac.in`);
                             handleEditCoordinatorChange(index, 'phone', foundUser.phone || "");
-                            handleEditCoordinatorChange(index, 'password', foundUser.plain_password || foundUser.roll_number || "");
+                            if (!coord.password) {
+                              handleEditCoordinatorChange(index, 'password', foundUser.plain_password || foundUser.roll_number || "");
+                            }
                           } else {
                             handleEditCoordinatorChange(index, 'name', "");
-                            handleEditCoordinatorChange(index, 'email', "");
+                            handleEditCoordinatorChange(index, 'email', `${inputRoll.toLowerCase()}@psgitech.ac.in`);
                             handleEditCoordinatorChange(index, 'phone', "");
-                            handleEditCoordinatorChange(index, 'password', "");
                           }
                         }}
-                        className="w-full h-8 text-xs rounded-md border border-input bg-background px-3 py-1 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      >
-                        <option value="">Select from Student/Coordinator list...</option>
-                        {[...students, ...coordinators]
-                          .filter((user, idx, self) => self.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase()) === idx)
-                          .sort((a, b) => a.full_name.localeCompare(b.full_name))
-                          .map(user => (
-                            <option key={user.id || user._id} value={user.email}>
-                              {user.full_name} ({user.roll_number || "No Roll"}) - {user.role === 'coordinator' ? 'Coordinator' : 'Student'}
-                            </option>
-                          ))
-                        }
-                      </select>
+                        placeholder="Enter Student Roll Number"
+                        className="h-8 text-xs"
+                      />
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 text-slate-500 border-t border-dashed mt-2">
-                      <div><span className="font-semibold text-slate-600">Name:</span> {coord.name || "-"}</div>
-                      <div><span className="font-semibold text-slate-600">Email:</span> {coord.email || "-"}</div>
-                      <div><span className="font-semibold text-slate-600">Phone:</span> {coord.phone || "-"}</div>
-                      <div><span className="font-semibold text-slate-600">Password:</span> {coord.password || "-"}</div>
+                    {coord.name && (
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1 text-slate-500 border-t border-dashed mt-2">
+                        <div><span className="font-semibold text-slate-600">Name:</span> {coord.name}</div>
+                        <div><span className="font-semibold text-slate-600">Phone:</span> {coord.phone || "-"}</div>
+                      </div>
+                    )}
+                    <div className="space-y-1 mt-2">
+                      <Label className="text-xs">Set Password *</Label>
+                      <Input
+                        type="text"
+                        value={coord.password || ""}
+                        onChange={(e) => handleEditCoordinatorChange(index, 'password', e.target.value)}
+                        placeholder="Set password for coordinator"
+                        className="h-8 text-xs"
+                      />
                     </div>
                   </div>
                 ))}
