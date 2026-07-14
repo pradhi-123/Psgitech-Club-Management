@@ -113,7 +113,7 @@ router.get('/users/coordinators', authenticateToken, requireAdmin, async (req, r
       return {
         id: c._id,
         full_name: c.full_name,
-        email: c.email,
+        email: (!c.email || c.email.endsWith('@psgitech.ac.in') || c.email === 'Unavailable') ? 'Unavailable' : c.email,
         phone: c.phone || 'Unavailable',
         role: c.role,
         plain_password: c.plain_password || '',
@@ -216,15 +216,25 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// PUT /api/auth/users/profile/phone (Update phone - Self functionality)
-router.put('/users/profile/phone', authenticateToken, async (req, res) => {
+// PUT /api/auth/users/profile (Update profile details - Self functionality)
+router.put('/users/profile', authenticateToken, async (req, res) => {
   try {
-    const { phone } = req.body;
+    const { phone, email } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    user.phone = phone !== undefined ? phone.trim() : user.phone;
+    
+    if (phone !== undefined) {
+      user.phone = phone.trim();
+    }
+    if (email !== undefined) {
+      const cleanedEmail = email.trim().toLowerCase();
+      if (cleanedEmail !== '' && cleanedEmail !== 'unavailable') {
+        user.email = cleanedEmail;
+      }
+    }
+    
     await user.save();
-    res.json({ message: 'Phone number updated successfully', user });
+    res.json({ message: 'Profile updated successfully', user });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Server error' });
   }

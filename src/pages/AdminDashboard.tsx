@@ -1072,17 +1072,7 @@ const AdminDashboard = () => {
                             placeholder="e.g., 22AD001"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label>Email Address *</Label>
-                          <Input
-                            type="email"
-                            value={studentForm.email}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              setStudentForm({ ...studentForm, email: e.target.value })
-                            }
-                            placeholder="e.g., name@domain.com"
-                          />
-                        </div>
+
                         <div className="space-y-2">
                           <Label>Department</Label>
                           <Input
@@ -1130,7 +1120,7 @@ const AdminDashboard = () => {
 
                 <div className="flex flex-col sm:flex-row gap-3 pb-2 w-full sm:max-w-3xl">
                   <Input
-                    placeholder="Search students by name, email, roll number..."
+                    placeholder="Search students by name, roll number..."
                     value={studentsSearch}
                     onChange={(e) => setStudentsSearch(e.target.value)}
                     className="bg-white/80 backdrop-blur-sm border-slate-200 flex-1"
@@ -1339,16 +1329,19 @@ const AdminDashboard = () => {
                   }
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={editingUser.email || ""}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setEditingUser({ ...editingUser, email: e.target.value })
-                  }
-                />
-              </div>
+              {editingUser.role !== "student" && (
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={editingUser.email === "Unavailable" ? "" : (editingUser.email || "")}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setEditingUser({ ...editingUser, email: e.target.value })
+                    }
+                    placeholder="Enter email address"
+                  />
+                </div>
+              )}
               {editingUser.role === "student" && (
                 <>
                   <div className="space-y-2">
@@ -1426,7 +1419,7 @@ const AdminDashboard = () => {
                   <div className="space-y-2">
                     <Label>Phone Number</Label>
                     <Input
-                      value={editingUser.phone || ""}
+                      value={editingUser.phone === "Unavailable" ? "" : (editingUser.phone || "")}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setEditingUser({ ...editingUser, phone: e.target.value })
                       }

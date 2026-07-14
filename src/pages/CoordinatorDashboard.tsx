@@ -66,14 +66,26 @@ const CoordinatorDashboard = () => {
   // Notification States
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [isUpdatePhoneOpen, setIsUpdatePhoneOpen] = useState(false);
-  const [newPhoneNumber, setNewPhoneNumber] = useState(profile?.phone || "");
+  const [newPhoneNumber, setNewPhoneNumber] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const handleUpdateProfile = async () => {
+    try {
+      await api.put("/api/auth/users/profile", { phone: newPhoneNumber, email: newEmail });
+      toast.success("Profile details updated successfully!");
+      setIsUpdatePhoneOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error("Failed to update profile: " + err.message);
+    }
+  };
   const [dismissedNotifications, setDismissedNotifications] = useState<string[]>(() => {
     return JSON.parse(localStorage.getItem("dismissed_notifications_coord") || "[]");
   });
 
   useEffect(() => {
-    if (profile?.phone) {
-      setNewPhoneNumber(profile.phone);
+    if (profile) {
+      setNewPhoneNumber(profile.phone && profile.phone !== "Unavailable" ? profile.phone : "");
+      setNewEmail(profile.email && !profile.email.endsWith('@psgitech.ac.in') && profile.email !== "Unavailable" ? profile.email : "");
     }
   }, [profile]);
 
@@ -255,16 +267,6 @@ const CoordinatorDashboard = () => {
     setConfirmDialogOpen(true);
   };
 
-  const handleUpdatePhoneNumber = async () => {
-    try {
-      await api.put("/api/auth/users/profile/phone", { phone: newPhoneNumber });
-      toast.success("Phone number updated successfully!");
-      setIsUpdatePhoneOpen(false);
-      fetchData();
-    } catch (err: any) {
-      toast.error("Failed to update phone number: " + err.message);
-    }
-  };
 
   const handleRegisterEvent = async () => {
     if (!profile?.id || !selectedEventId) return;
@@ -500,15 +502,15 @@ const CoordinatorDashboard = () => {
                   <Dialog open={isUpdatePhoneOpen} onOpenChange={setIsUpdatePhoneOpen}>
                     <DialogTrigger asChild>
                       <Button variant="secondary" size="sm" className="gap-1.5 sm:gap-2">
-                        <Phone className="w-3.5 h-3.5 sm:w-4 h-4" />
-                        <span className="hidden sm:inline">Update Phone</span>
-                        <span className="sm:hidden">Phone</span>
+                        <User className="w-3.5 h-3.5 sm:w-4 h-4" />
+                        <span className="hidden sm:inline">Update Profile</span>
+                        <span className="sm:hidden">Profile</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-[90vw] sm:max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Update Phone Number</DialogTitle>
-                        <DialogDescription>Update your contact phone number below.</DialogDescription>
+                        <DialogTitle>Update Profile Details</DialogTitle>
+                        <DialogDescription>Update your contact phone number and email address below.</DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4 py-2">
                         <div className="space-y-2">
@@ -521,8 +523,18 @@ const CoordinatorDashboard = () => {
                             className="text-slate-800"
                           />
                         </div>
-                        <Button onClick={handleUpdatePhoneNumber} className="w-full bg-gradient-primary">
-                          Save Phone Number
+                        <div className="space-y-2">
+                          <Label className="text-slate-700">Email Address</Label>
+                          <Input
+                            type="email"
+                            value={newEmail}
+                            onChange={(e) => setNewEmail(e.target.value)}
+                            placeholder="Enter new email address"
+                            className="text-slate-800"
+                          />
+                        </div>
+                        <Button onClick={handleUpdateProfile} className="w-full bg-gradient-primary">
+                          Save Profile Details
                         </Button>
                       </div>
                     </DialogContent>
