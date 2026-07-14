@@ -817,7 +817,11 @@ const CoordinatorDashboard = () => {
                             </div>
                           </CardHeader>
                           <CardContent className="space-y-2 mt-auto">
-                            <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">{event.description}</p>
+                            {event.description && (
+                              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-wrap break-words mt-1">
+                                {event.description}
+                              </p>
+                            )}
                             <div className="text-[11px] sm:text-xs text-slate-500 space-y-0.5 border-t border-slate-100 pt-2 flex flex-wrap gap-x-4">
                               <p><strong>Date:</strong> {new Date(event.event_date).toLocaleDateString()}</p>
                               <p><strong>Duration:</strong> {event.duration} mins</p>
@@ -979,7 +983,11 @@ const CoordinatorDashboard = () => {
                                 </div>
                               </CardHeader>
                               <CardContent className="space-y-3 mt-auto">
-                                <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">{event.description}</p>
+                                {event.description && (
+                                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-wrap break-words mt-1">
+                                    {event.description}
+                                  </p>
+                                )}
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-t border-slate-100 pt-2">
                                   <div className="text-[11px] sm:text-xs text-slate-500">
                                     <p className="font-semibold text-slate-700">{new Date(event.event_date).toLocaleDateString()} at {new Date(event.event_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>

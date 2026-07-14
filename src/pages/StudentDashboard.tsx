@@ -610,7 +610,11 @@ const StudentDashboard = () => {
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-3 sm:space-y-4 mt-auto">
-                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{event.description}</p>
+                          {event.description && (
+                            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap break-words mt-1">
+                              {event.description}
+                            </p>
+                          )}
                           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <div className="text-xs sm:text-sm space-y-0.5">
                               <p className="font-semibold text-slate-700">

@@ -1394,12 +1394,12 @@ const AdminDashboard = () => {
                 <div className="space-y-4">
                   {filteredEvents.map((event) => (
                     <Card key={event.id} className={`shadow-card border border-slate-200/60 border-l-4 hover:shadow-md transition-all duration-300 ${event.category?.toLowerCase() === 'technical'
-                        ? 'bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50/30 border-l-blue-600/80'
-                        : event.category?.toLowerCase() === 'cultural'
-                          ? 'bg-gradient-to-r from-purple-50/70 via-fuchsia-50/40 to-slate-50/30 border-l-purple-600/80'
-                          : event.category?.toLowerCase() === 'sports'
-                            ? 'bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-slate-50/30 border-l-emerald-600/80'
-                            : 'bg-gradient-to-r from-amber-50/70 via-orange-50/40 to-slate-50/30 border-l-amber-600/80'
+                      ? 'bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50/30 border-l-blue-600/80'
+                      : event.category?.toLowerCase() === 'cultural'
+                        ? 'bg-gradient-to-r from-purple-50/70 via-fuchsia-50/40 to-slate-50/30 border-l-purple-600/80'
+                        : event.category?.toLowerCase() === 'sports'
+                          ? 'bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-slate-50/30 border-l-emerald-600/80'
+                          : 'bg-gradient-to-r from-amber-50/70 via-orange-50/40 to-slate-50/30 border-l-amber-600/80'
                       }`}>
                       <CardHeader className="py-4">
                         <div className="flex justify-between items-start gap-3">
@@ -1410,12 +1410,12 @@ const AdminDashboard = () => {
                               {/* Club & Category tags */}
                               <div className="flex flex-wrap gap-2 text-xs items-center mb-1">
                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${event.category?.toLowerCase() === 'technical'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : event.category?.toLowerCase() === 'cultural'
-                                      ? 'bg-purple-100 text-purple-800'
-                                      : event.category?.toLowerCase() === 'sports'
-                                        ? 'bg-emerald-100 text-emerald-800'
-                                        : 'bg-amber-100 text-amber-800'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : event.category?.toLowerCase() === 'cultural'
+                                    ? 'bg-purple-100 text-purple-800'
+                                    : event.category?.toLowerCase() === 'sports'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : 'bg-amber-100 text-amber-800'
                                   }`}>
                                   {event.category || 'Event'}
                                 </span>
@@ -1444,6 +1444,13 @@ const AdminDashboard = () => {
                                 <span className="font-medium">Duration:</span>
                                 <span className="font-semibold text-slate-850">{event.duration} mins</span>
                               </div>
+
+                              {/* Description */}
+                              {event.description && (
+                                <p className="text-xs text-slate-600 mt-2 bg-slate-50/50 p-2.5 rounded border border-slate-100/60 leading-relaxed whitespace-pre-wrap break-words">
+                                  {event.description}
+                                </p>
+                              )}
 
                               {/* Registration stats */}
                               <div className="flex items-center gap-4 text-xs font-semibold mt-2 pt-2 border-t border-slate-200/40">

@@ -1,1 +1,1 @@
-feat: prevent clashing event registrations and style admin event cards
+style: remove line clamp limits on event descriptions across all dashboards
