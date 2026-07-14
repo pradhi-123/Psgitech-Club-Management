@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/apiClient";
-import { LogOut, Plus, Users, Calendar, Award, Pencil, Trash2, User, Phone, Mail, Trash, Eye, EyeOff, FileText, Download, Upload, ChevronsUpDown, Check, GraduationCap, BookOpen, Building2 } from "lucide-react";
+import { LogOut, Plus, Users, Calendar, Award, Pencil, Trash2, User, Phone, Mail, Trash, Eye, EyeOff, FileText, Download, Upload, ChevronsUpDown, Check, GraduationCap, BookOpen, Building2, Clock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -1393,31 +1393,81 @@ const AdminDashboard = () => {
 
                 <div className="space-y-4">
                   {filteredEvents.map((event) => (
-                    <Card key={event.id} className={`bg-white/70 border border-white/50 border-l-4 ${event.category?.toLowerCase() === 'technical' ? 'border-l-blue-500' : event.category?.toLowerCase() === 'cultural' ? 'border-l-purple-500' : event.category?.toLowerCase() === 'sports' ? 'border-l-emerald-500' : 'border-l-amber-500'} backdrop-blur-sm shadow-card hover:scale-[1.01] transition-all duration-300`}>
-                      <CardHeader>
-                        <div className="flex justify-between items-start gap-2">
-                          <div className="min-w-0 flex-1">
-                            <CardTitle className="truncate">{event.name}</CardTitle>
-                            <CardDescription className="truncate">
-                              {event.clubs?.name} • Coordinator: {event.profiles?.full_name}
-                            </CardDescription>
+                    <Card key={event.id} className={`shadow-card border border-slate-200/60 border-l-4 hover:shadow-md transition-all duration-300 ${event.category?.toLowerCase() === 'technical'
+                        ? 'bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50/30 border-l-blue-600/80'
+                        : event.category?.toLowerCase() === 'cultural'
+                          ? 'bg-gradient-to-r from-purple-50/70 via-fuchsia-50/40 to-slate-50/30 border-l-purple-600/80'
+                          : event.category?.toLowerCase() === 'sports'
+                            ? 'bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-slate-50/30 border-l-emerald-600/80'
+                            : 'bg-gradient-to-r from-amber-50/70 via-orange-50/40 to-slate-50/30 border-l-amber-600/80'
+                      }`}>
+                      <CardHeader className="py-4">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="space-y-2 flex-grow min-w-0">
+                            <CardTitle className="text-base font-bold text-slate-800 break-words">{event.name}</CardTitle>
+
+                            <div className="space-y-1.5 mt-2">
+                              {/* Club & Category tags */}
+                              <div className="flex flex-wrap gap-2 text-xs items-center mb-1">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${event.category?.toLowerCase() === 'technical'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : event.category?.toLowerCase() === 'cultural'
+                                      ? 'bg-purple-100 text-purple-800'
+                                      : event.category?.toLowerCase() === 'sports'
+                                        ? 'bg-emerald-100 text-emerald-800'
+                                        : 'bg-amber-100 text-amber-800'
+                                  }`}>
+                                  {event.category || 'Event'}
+                                </span>
+                                <span className="px-2 py-0.5 bg-slate-200/85 text-slate-800 rounded-full text-[10px] font-bold uppercase">
+                                  🏛️ {event.clubs?.name || 'Unassigned'}
+                                </span>
+                              </div>
+
+                              {/* Coordinator */}
+                              <div className="flex items-center gap-2 text-xs text-slate-650">
+                                <User className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                                <span className="font-medium">Coordinator:</span>
+                                <span className="font-semibold text-slate-800">{event.profiles?.full_name || 'N/A'}</span>
+                              </div>
+
+                              {/* Date & Time */}
+                              <div className="flex items-center gap-2 text-xs text-slate-655">
+                                <Calendar className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                <span className="font-medium">Date & Time:</span>
+                                <span className="font-semibold text-slate-800">{new Date(event.event_date).toLocaleString()}</span>
+                              </div>
+
+                              {/* Duration */}
+                              <div className="flex items-center gap-2 text-xs text-slate-655">
+                                <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                <span className="font-medium">Duration:</span>
+                                <span className="font-semibold text-slate-850">{event.duration} mins</span>
+                              </div>
+
+                              {/* Registration stats */}
+                              <div className="flex items-center gap-4 text-xs font-semibold mt-2 pt-2 border-t border-slate-200/40">
+                                <span className="text-slate-600">
+                                  Registrations: <span className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded font-bold">{event.registered_count || 0}</span>
+                                </span>
+                                <span className="text-emerald-700">
+                                  Attended: <span className="text-emerald-950 bg-emerald-100 px-2 py-0.5 rounded font-bold">{event.attended_count || 0}</span>
+                                </span>
+                              </div>
+                            </div>
                           </div>
+
                           <Button
                             variant="destructive"
                             size="icon"
                             onClick={() => handleDeleteEvent(event.id)}
-                            className="h-8 w-8 shrink-0"
+                            className="h-8 w-8 shrink-0 hover:bg-red-600"
                             title="Delete Event"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(event.event_date).toLocaleString()}
-                        </p>
-                      </CardContent>
                     </Card>
                   ))}
                 </div>

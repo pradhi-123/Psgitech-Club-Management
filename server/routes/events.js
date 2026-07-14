@@ -169,7 +169,7 @@ router.post('/volunteers/confirm', authenticateToken, requireStaff, async (req, 
 
     // Look for existing registration or create one
     let reg = await EventRegistration.findOne({ event_id: eventId, student_id: student._id });
-    
+
     if (reg && reg.attendance_confirmed && reg.is_volunteer) {
       return res.status(400).json({ message: 'Volunteer attendance already confirmed for this student.' });
     }
@@ -277,9 +277,9 @@ router.post('/volunteers/names', authenticateToken, requireStaff, async (req, re
 
   try {
     const formattedRolls = rollNumbers.map(r => r.trim());
-    const users = await User.find({ 
-      role: 'student', 
-      roll_number: { $in: formattedRolls } 
+    const users = await User.find({
+      role: 'student',
+      roll_number: { $in: formattedRolls }
     }).select('roll_number full_name');
 
     const nameMap = {};
@@ -304,6 +304,33 @@ router.post('/register', authenticateToken, async (req, res) => {
     const existing = await EventRegistration.findOne({ event_id: eventId, student_id: req.user.id });
     if (existing) {
       return res.status(400).json({ message: 'Already registered for this event' });
+    }
+
+    // Check for event time overlaps/clashes
+    const targetEvent = await Event.findById(eventId);
+    if (!targetEvent) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const targetStart = new Date(targetEvent.event_date);
+    const targetEnd = new Date(targetStart.getTime() + targetEvent.duration * 60 * 1000);
+
+    const myRegistrations = await EventRegistration.find({ student_id: req.user.id }).populate('event_id');
+    for (const reg of myRegistrations) {
+      if (!reg.event_id) continue;
+      const existingEvent = reg.event_id;
+      const existingStart = new Date(existingEvent.event_date);
+      const existingEnd = new Date(existingStart.getTime() + existingEvent.duration * 60 * 1000);
+
+      // Overlap formula: StartA < EndB && StartB < EndA
+      if (targetStart < existingEnd && existingStart < targetEnd) {
+        const timeStr = existingStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) +
+          ' - ' +
+          existingEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return res.status(400).json({
+          message: `Time clash! You are already registered for "${existingEvent.name}" (${timeStr}).`
+        });
+      }
     }
 
     const qrCode = `${req.user.id}-${eventId}-${Date.now()}`;

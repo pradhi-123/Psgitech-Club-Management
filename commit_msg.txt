@@ -1,1 +1,1 @@
-feat: add server operations helper script for database maintenance
+feat: prevent clashing event registrations and style admin event cards
