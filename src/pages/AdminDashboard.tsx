@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -308,7 +309,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -318,79 +319,135 @@ const AdminDashboard = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const text = event.target?.result as string;
-        if (!text) {
+        const data = event.target?.result;
+        if (!data) {
           setBulkUploadError("File is empty");
           return;
         }
 
-        const lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-        if (lines.length < 2) {
-          setBulkUploadError("File must contain a header row and at least one data row");
-          return;
-        }
-
-        const delimiter = lines[0].includes(";") ? ";" : ",";
-        const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase().replace(/['"]/g, ""));
-
-        const headerMap: Record<string, string> = {
-          "name": "full_name",
-          "full name": "full_name",
-          "fullname": "full_name",
-          "full_name": "full_name",
-          "roll": "roll_number",
-          "roll number": "roll_number",
-          "rollnumber": "roll_number",
-          "roll_number": "roll_number",
-          "email": "email",
-          "email address": "email",
-          "email_address": "email",
-          "mail": "email",
-          "department": "department",
-          "dept": "department",
-          "section": "section",
-          "sec": "section",
-          "year": "year",
-          "phone": "phone",
-          "phone number": "phone",
-          "phone_number": "phone",
-          "mobile": "phone"
-        };
-
-        const mappedHeaders = headers.map(h => headerMap[h] || h);
-
-        const parsedList: any[] = [];
-        for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(delimiter).map(v => v.trim().replace(/^['"]|['"]$/g, ""));
-          if (values.length < 2) continue;
-
-          const studentObj: any = {};
-          mappedHeaders.forEach((header, index) => {
-            if (index < values.length) {
-              studentObj[header] = values[index];
-            }
-          });
-
-          if (!studentObj.full_name || !studentObj.email || !studentObj.roll_number) {
-            continue;
+        let parsedRows: any[] = [];
+        const fileExtension = file.name.split('.').pop()?.toLowerCase();
+        
+        if (fileExtension === "csv") {
+          const text = new TextDecoder().decode(data as ArrayBuffer);
+          const lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+          if (lines.length < 2) {
+            setBulkUploadError("File must contain a header row and at least one data row");
+            return;
           }
 
-          studentObj.year = studentObj.year ? parseInt(studentObj.year) : 1;
-          if (isNaN(studentObj.year)) studentObj.year = 1;
+          const delimiter = lines[0].includes(";") ? ";" : ",";
+          const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase().replace(/['"]/g, ""));
+          
+          const headerMap: Record<string, string> = {
+            "name": "full_name",
+            "full name": "full_name",
+            "fullname": "full_name",
+            "full_name": "full_name",
+            "roll": "roll_number",
+            "roll number": "roll_number",
+            "rollnumber": "roll_number",
+            "roll_number": "roll_number",
+            "email": "email",
+            "email address": "email",
+            "email_address": "email",
+            "mail": "email",
+            "department": "department",
+            "dept": "department",
+            "section": "section",
+            "sec": "section",
+            "year": "year",
+            "phone": "phone",
+            "phone number": "phone",
+            "phone_number": "phone",
+            "mobile": "phone"
+          };
 
-          parsedList.push(studentObj);
+          const mappedHeaders = headers.map(h => headerMap[h] || h);
+
+          for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(delimiter).map(v => v.trim().replace(/^['"]|['"]$/g, ""));
+            if (values.length < 2) continue;
+
+            const studentObj: any = {};
+            mappedHeaders.forEach((header, index) => {
+              if (index < values.length) {
+                studentObj[header] = values[index];
+              }
+            });
+            parsedRows.push(studentObj);
+          }
+        } else {
+          const workbook = XLSX.read(new Uint8Array(data as ArrayBuffer), { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[];
+
+          if (jsonData.length < 2) {
+            setBulkUploadError("Excel sheet must contain a header row and at least one data row");
+            return;
+          }
+
+          const rawHeaders = (jsonData[0] as any[]).map(h => String(h || "").trim().toLowerCase());
+          
+          const headerMap: Record<string, string> = {
+            "name": "full_name",
+            "full name": "full_name",
+            "fullname": "full_name",
+            "full_name": "full_name",
+            "roll": "roll_number",
+            "roll number": "roll_number",
+            "rollnumber": "roll_number",
+            "roll_number": "roll_number",
+            "email": "email",
+            "email address": "email",
+            "email_address": "email",
+            "mail": "email",
+            "department": "department",
+            "dept": "department",
+            "section": "section",
+            "sec": "section",
+            "year": "year",
+            "phone": "phone",
+            "phone number": "phone",
+            "phone_number": "phone",
+            "mobile": "phone"
+          };
+
+          const mappedHeaders = rawHeaders.map(h => headerMap[h] || h);
+
+          for (let i = 1; i < jsonData.length; i++) {
+            const rowData = jsonData[i] as any[];
+            if (!rowData || rowData.length === 0) continue;
+
+            const studentObj: any = {};
+            mappedHeaders.forEach((header, index) => {
+              if (index < rowData.length) {
+                studentObj[header] = String(rowData[index] || "").trim();
+              }
+            });
+            parsedRows.push(studentObj);
+          }
         }
 
-        if (parsedList.length === 0) {
-          setBulkUploadError("Could not parse any valid student records. Check headers (must contain Name, Roll Number, and Email)");
+        const cleanedRows = parsedRows.filter(row => {
+          return row.full_name && row.email && row.roll_number;
+        }).map(row => {
+          row.year = row.year ? parseInt(row.year) : 1;
+          if (isNaN(row.year)) row.year = 1;
+          return row;
+        });
+
+        if (cleanedRows.length === 0) {
+          setBulkUploadError("Could not find any valid student rows. Headers must contain Name, Roll Number, and Email.");
         } else {
-          setBulkParsedStudents(parsedList);
+          setBulkParsedStudents(cleanedRows);
         }
       } catch (err: any) {
-        setBulkUploadError("Failed to parse CSV: " + err.message);
+        setBulkUploadError("Failed to parse sheet: " + err.message);
       }
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   };
 
   const handleBulkImportSubmit = async () => {
@@ -914,13 +971,13 @@ const AdminDashboard = () => {
                           <div className="border-2 border-dashed rounded-xl p-6 text-center hover:bg-muted/40 transition-colors relative cursor-pointer">
                             <input
                               type="file"
-                              accept=".csv"
-                              onChange={handleCsvFileChange}
+                              accept=".csv,.xlsx,.xls"
+                              onChange={handleFileChange}
                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             />
                             <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                            <p className="text-sm font-medium">Click to upload or drag & drop CSV file</p>
-                            <p className="text-xs text-slate-400 mt-1">Only .csv files generated from Excel sheets are supported</p>
+                            <p className="text-sm font-medium">Click to upload or drag & drop sheet file</p>
+                            <p className="text-xs text-slate-400 mt-1">Supports Excel sheets (.xlsx, .xls) and CSV files</p>
                           </div>
 
                           {bulkUploadError && (
