@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/apiClient";
-import { LogOut, Plus, Users, Calendar, Award, Pencil, Trash2, User, Phone, Mail, Trash, Eye, EyeOff, FileText, Download, Upload } from "lucide-react";
+import { LogOut, Plus, Users, Calendar, Award, Pencil, Trash2, User, Phone, Mail, Trash, Eye, EyeOff, FileText, Download, Upload, ChevronsUpDown, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
@@ -62,6 +64,8 @@ const AdminDashboard = () => {
   const [editClubCoordinators, setEditClubCoordinators] = useState([{ name: "", phone: "", email: "", password: "", roll_number: "" }]);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
   const [visibleEditPasswords, setVisibleEditPasswords] = useState<Record<number, boolean>>({});
+  const [openCoordCombo, setOpenCoordCombo] = useState<Record<number, boolean>>({});
+  const [openEditCoordCombo, setOpenEditCoordCombo] = useState<Record<number, boolean>>({});
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isAddClubOpen, setIsAddClubOpen] = useState(false);
   const [isAddCoordinatorOpen, setIsAddCoordinatorOpen] = useState(false);
@@ -720,7 +724,7 @@ const AdminDashboard = () => {
                             </Button>
                           </div>
 
-                          <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
+                          <div className="space-y-3">
                             {clubCoordinators.map((coord, index) => (
                               <div key={index} className="p-3 border rounded-lg space-y-2 relative bg-muted/25">
                                 {clubCoordinators.length > 1 && (
@@ -734,100 +738,93 @@ const AdminDashboard = () => {
                                     <Trash className="w-3.5 h-3.5" />
                                   </Button>
                                 )}
-                                <div className="space-y-1 relative">
-                                  <Label className="text-xs">Student Roll Number *</Label>
-                                  <Input
-                                    value={coord.roll_number || ""}
-                                    onChange={(e) => {
-                                      const inputRoll = e.target.value.toUpperCase();
-
-                                      if (inputRoll.trim() === "") {
-                                        handleCoordinatorBatchChange(index, { roll_number: "", name: "", email: "", phone: "", password: "" });
-                                        return;
-                                      }
-
-                                      const foundUser = [...students, ...coordinators].find(
-                                        u => String(u.roll_number || '').toUpperCase().trim() === inputRoll.trim()
-                                      );
-                                      if (foundUser) {
-                                        handleCoordinatorBatchChange(index, {
-                                          roll_number: inputRoll,
-                                          name: foundUser.full_name || "",
-                                          email: (!foundUser.email || foundUser.email === 'Unavailable' || foundUser.email.endsWith('@psgitech.ac.in')) ? "" : foundUser.email,
-                                          phone: foundUser.phone === 'Unavailable' ? "" : (foundUser.phone || ""),
-                                          password: foundUser.plain_password || foundUser.roll_number || "",
-                                        });
-                                      } else {
-                                        handleCoordinatorBatchChange(index, { roll_number: inputRoll, name: "", email: "", phone: "", password: "" });
-                                      }
-                                    }}
-                                    placeholder="Enter Student Roll Number"
-                                    className="h-8 text-xs"
-                                  />
-                                  {coord.roll_number && coord.roll_number.length >= 2 && !coord.name && (
-                                    <div className="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[150px] overflow-y-auto divide-y divide-slate-100 text-xs">
-                                      {students
-                                        .filter(s =>
-                                          String(s.roll_number || '').toUpperCase().includes(coord.roll_number.toUpperCase()) ||
-                                          s.full_name?.toUpperCase().includes(coord.roll_number.toUpperCase())
-                                        )
-                                        .slice(0, 5)
-                                        .map((s) => (
-                                          <div
-                                            key={s.id || s._id}
-                                            className="p-2 hover:bg-slate-50 cursor-pointer flex justify-between bg-white text-slate-800"
-                                            onMouseDown={() => {
-                                              handleCoordinatorBatchChange(index, {
-                                                roll_number: s.roll_number,
-                                                name: s.full_name,
-                                                email: (!s.email || s.email === 'Unavailable' || s.email.endsWith('@psgitech.ac.in')) ? "" : s.email,
-                                                phone: s.phone === 'Unavailable' ? "" : (s.phone || ""),
-                                                password: s.plain_password || s.roll_number || "",
-                                              });
-                                            }}
-                                          >
-                                            <span className="font-semibold">{s.full_name}</span>
-                                            <span className="text-slate-400">{s.roll_number}</span>
-                                          </div>
-                                        ))
-                                      }
-                                    </div>
-                                  )}
+                                {/* Student search combobox */}
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Select Student *</Label>
+                                  <Popover
+                                    open={openCoordCombo[index] || false}
+                                    onOpenChange={(open) => setOpenCoordCombo(prev => ({ ...prev, [index]: open }))}
+                                  >
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        className="w-full h-8 text-xs justify-between font-normal truncate"
+                                      >
+                                        <span className="truncate">
+                                          {coord.name ? `${coord.name} (${coord.roll_number})` : "Search by name or roll number..."}
+                                        </span>
+                                        <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[280px] p-0 z-[200]" align="start">
+                                      <Command>
+                                        <CommandInput placeholder="Type name or roll no..." className="h-8 text-xs" />
+                                        <CommandList>
+                                          <CommandEmpty className="text-xs py-3 text-center text-muted-foreground">No student found.</CommandEmpty>
+                                          <CommandGroup>
+                                            {students.map((s) => (
+                                              <CommandItem
+                                                key={s.id || s._id}
+                                                value={`${s.full_name} ${s.roll_number}`}
+                                                onSelect={() => {
+                                                  handleCoordinatorBatchChange(index, {
+                                                    roll_number: s.roll_number,
+                                                    name: s.full_name,
+                                                    email: (!s.email || s.email === 'Unavailable' || s.email.endsWith('@psgitech.ac.in')) ? "" : s.email,
+                                                    phone: s.phone === 'Unavailable' ? "" : (s.phone || ""),
+                                                    password: s.plain_password || s.roll_number || "",
+                                                  });
+                                                  setOpenCoordCombo(prev => ({ ...prev, [index]: false }));
+                                                }}
+                                                className="text-xs"
+                                              >
+                                                <Check className={`mr-2 h-3 w-3 ${coord.roll_number === s.roll_number ? 'opacity-100' : 'opacity-0'}`} />
+                                                <span className="font-medium">{s.full_name}</span>
+                                                <span className="ml-2 text-muted-foreground">{s.roll_number}</span>
+                                              </CommandItem>
+                                            ))}
+                                          </CommandGroup>
+                                        </CommandList>
+                                      </Command>
+                                    </PopoverContent>
+                                  </Popover>
                                 </div>
-                                <div className="space-y-1 mt-2">
+                                {/* Editable fields - shown after student selected */}
+                                <div className="space-y-1">
                                   <Label className="text-xs">Coordinator Name *</Label>
                                   <Input
                                     value={coord.name || ""}
                                     onChange={(e) => handleCoordinatorChange(index, 'name', e.target.value)}
-                                    placeholder="Enter Coordinator Name"
+                                    placeholder="Auto-filled or type manually"
                                     className="h-8 text-xs"
                                   />
                                 </div>
-                                <div className="space-y-1 mt-2">
+                                <div className="space-y-1">
                                   <Label className="text-xs">Phone Number</Label>
                                   <Input
                                     value={coord.phone === "Unavailable" ? "" : (coord.phone || "")}
                                     onChange={(e) => handleCoordinatorChange(index, 'phone', e.target.value)}
-                                    placeholder="Enter Phone Number"
+                                    placeholder="Enter phone number"
                                     className="h-8 text-xs"
                                   />
                                 </div>
-                                <div className="space-y-1 mt-2">
+                                <div className="space-y-1">
                                   <Label className="text-xs">Email Address</Label>
                                   <Input
                                     value={coord.email === "Unavailable" ? "" : (coord.email || "")}
                                     onChange={(e) => handleCoordinatorChange(index, 'email', e.target.value)}
-                                    placeholder="Enter Email Address"
+                                    placeholder="Enter email address"
                                     className="h-8 text-xs"
                                   />
                                 </div>
-                                <div className="space-y-1 mt-2">
-                                  <Label className="text-xs">Set Password *</Label>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Password *</Label>
                                   <Input
                                     type="text"
                                     value={coord.password || ""}
                                     onChange={(e) => handleCoordinatorChange(index, 'password', e.target.value)}
-                                    placeholder="Set password for coordinator"
+                                    placeholder="Set coordinator password"
                                     className="h-8 text-xs"
                                   />
                                 </div>
@@ -1647,7 +1644,7 @@ const AdminDashboard = () => {
                 </Button>
               </div>
 
-              <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
+              <div className="space-y-3">
                 {editClubCoordinators.map((coord, index) => (
                   <div key={index} className="p-3 border rounded-lg space-y-2 relative bg-muted/25">
                     {editClubCoordinators.length > 1 && (
@@ -1661,100 +1658,95 @@ const AdminDashboard = () => {
                         <Trash className="w-3.5 h-3.5" />
                       </Button>
                     )}
-                    <div className="space-y-1 relative">
-                      <Label className="text-xs">Student Roll Number *</Label>
-                      <Input
-                        value={coord.roll_number || ""}
-                        onChange={(e) => {
-                          const inputRoll = e.target.value.toUpperCase();
-
-                          if (inputRoll.trim() === "") {
-                            handleEditCoordinatorBatchChange(index, { roll_number: "", name: "", email: "", phone: "", password: "" });
-                            return;
-                          }
-
-                          const foundUser = [...students, ...coordinators].find(
-                            u => String(u.roll_number || '').toUpperCase().trim() === inputRoll.trim()
-                          );
-                          if (foundUser) {
-                            handleEditCoordinatorBatchChange(index, {
-                              roll_number: inputRoll,
-                              name: foundUser.full_name || "",
-                              email: (!foundUser.email || foundUser.email === 'Unavailable' || foundUser.email.endsWith('@psgitech.ac.in')) ? "" : foundUser.email,
-                              phone: foundUser.phone === 'Unavailable' ? "" : (foundUser.phone || ""),
-                              password: coord.password || foundUser.plain_password || foundUser.roll_number || "",
-                            });
-                          } else {
-                            handleEditCoordinatorBatchChange(index, { roll_number: inputRoll, name: "", email: "", phone: "", password: "" });
-                          }
-                        }}
-                        placeholder="Enter Student Roll Number"
-                        className="h-8 text-xs"
-                      />
-                      {coord.roll_number && coord.roll_number.length >= 2 && !coord.name && (
-                        <div className="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[150px] overflow-y-auto divide-y divide-slate-100 text-xs">
-                          {students
-                            .filter(s =>
-                              String(s.roll_number || '').toUpperCase().includes(coord.roll_number.toUpperCase()) ||
-                              s.full_name?.toUpperCase().includes(coord.roll_number.toUpperCase())
-                            )
-                            .slice(0, 5)
-                            .map((s) => (
-                              <div
-                                key={s.id || s._id}
-                                className="p-2 hover:bg-slate-50 cursor-pointer flex justify-between bg-white text-slate-800"
-                                onMouseDown={() => {
-                                  handleEditCoordinatorBatchChange(index, {
-                                    roll_number: s.roll_number,
-                                    name: s.full_name,
-                                    email: (!s.email || s.email === 'Unavailable' || s.email.endsWith('@psgitech.ac.in')) ? "" : s.email,
-                                    phone: s.phone === 'Unavailable' ? "" : (s.phone || ""),
-                                    password: coord.password || s.plain_password || s.roll_number || "",
-                                  });
-                                }}
-                              >
-                                <span className="font-semibold">{s.full_name}</span>
-                                <span className="text-slate-400">{s.roll_number}</span>
-                              </div>
-                            ))
-                          }
-                        </div>
-                      )}
+                    {/* Student search combobox */}
+                    <div className="space-y-1">
+                      <Label className="text-xs">Select Student *</Label>
+                      <Popover
+                        open={openEditCoordCombo[index] || false}
+                        onOpenChange={(open) => setOpenEditCoordCombo(prev => ({ ...prev, [index]: open }))}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className="w-full h-8 text-xs justify-between font-normal truncate"
+                          >
+                            <span className="truncate">
+                              {coord.name ? `${coord.name} (${coord.roll_number})` : "Search by name or roll number..."}
+                            </span>
+                            <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[280px] p-0 z-[200]" align="start">
+                          <Command>
+                            <CommandInput placeholder="Type name or roll no..." className="h-8 text-xs" />
+                            <CommandList>
+                              <CommandEmpty className="text-xs py-3 text-center text-muted-foreground">No student found.</CommandEmpty>
+                              <CommandGroup>
+                                {[...students, ...coordinators].filter((u, i, arr) =>
+                                  arr.findIndex(x => x.roll_number === u.roll_number) === i
+                                ).map((s) => (
+                                  <CommandItem
+                                    key={s.id || s._id}
+                                    value={`${s.full_name} ${s.roll_number}`}
+                                    onSelect={() => {
+                                      handleEditCoordinatorBatchChange(index, {
+                                        roll_number: s.roll_number,
+                                        name: s.full_name,
+                                        email: (!s.email || s.email === 'Unavailable' || s.email.endsWith('@psgitech.ac.in')) ? "" : s.email,
+                                        phone: s.phone === 'Unavailable' ? "" : (s.phone || ""),
+                                        password: coord.password || s.plain_password || s.roll_number || "",
+                                      });
+                                      setOpenEditCoordCombo(prev => ({ ...prev, [index]: false }));
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    <Check className={`mr-2 h-3 w-3 ${coord.roll_number === s.roll_number ? 'opacity-100' : 'opacity-0'}`} />
+                                    <span className="font-medium">{s.full_name}</span>
+                                    <span className="ml-2 text-muted-foreground">{s.roll_number}</span>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
-                    <div className="space-y-1 mt-2">
+                    {/* Editable fields */}
+                    <div className="space-y-1">
                       <Label className="text-xs">Coordinator Name *</Label>
                       <Input
                         value={coord.name || ""}
                         onChange={(e) => handleEditCoordinatorChange(index, 'name', e.target.value)}
-                        placeholder="Enter Coordinator Name"
+                        placeholder="Auto-filled or type manually"
                         className="h-8 text-xs"
                       />
                     </div>
-                    <div className="space-y-1 mt-2">
+                    <div className="space-y-1">
                       <Label className="text-xs">Phone Number</Label>
                       <Input
                         value={coord.phone === "Unavailable" ? "" : (coord.phone || "")}
                         onChange={(e) => handleEditCoordinatorChange(index, 'phone', e.target.value)}
-                        placeholder="Enter Phone Number"
+                        placeholder="Enter phone number"
                         className="h-8 text-xs"
                       />
                     </div>
-                    <div className="space-y-1 mt-2">
+                    <div className="space-y-1">
                       <Label className="text-xs">Email Address</Label>
                       <Input
                         value={coord.email === "Unavailable" ? "" : (coord.email || "")}
                         onChange={(e) => handleEditCoordinatorChange(index, 'email', e.target.value)}
-                        placeholder="Enter Email Address"
+                        placeholder="Enter email address"
                         className="h-8 text-xs"
                       />
                     </div>
-                    <div className="space-y-1 mt-2">
-                      <Label className="text-xs">Set Password *</Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Password *</Label>
                       <Input
                         type="text"
                         value={coord.password || ""}
                         onChange={(e) => handleEditCoordinatorChange(index, 'password', e.target.value)}
-                        placeholder="Set password for coordinator"
+                        placeholder="Set coordinator password"
                         className="h-8 text-xs"
                       />
                     </div>
