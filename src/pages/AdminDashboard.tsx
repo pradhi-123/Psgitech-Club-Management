@@ -71,7 +71,7 @@ const AdminDashboard = () => {
   const [bulkParsedStudents, setBulkParsedStudents] = useState<any[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
-  
+
   // Search, Filter, Sort States
   const [clubsSearch, setClubsSearch] = useState("");
   const [coordsSearch, setCoordsSearch] = useState("");
@@ -114,52 +114,74 @@ const AdminDashboard = () => {
   };
 
   const handleAddCoordinatorRow = () => {
-    setClubCoordinators([...clubCoordinators, { name: "", phone: "", email: "", password: "", roll_number: "" }]);
+    setClubCoordinators(prev => [...prev, { name: "", phone: "", email: "", password: "", roll_number: "" }]);
   };
 
   const handleRemoveCoordinatorRow = (index: number) => {
-    setClubCoordinators(clubCoordinators.filter((_, i) => i !== index));
+    setClubCoordinators(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Update a single field for one coordinator row (Add Club)
   const handleCoordinatorChange = (index: number, field: string, value: string) => {
-    const updated = [...clubCoordinators];
-    updated[index] = { ...updated[index], [field]: value };
-    setClubCoordinators(updated);
+    setClubCoordinators(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  // Update multiple fields at once for one coordinator row (Add Club) - avoids stale state
+  const handleCoordinatorBatchChange = (index: number, fields: Partial<{ name: string; phone: string; email: string; password: string; roll_number: string }>) => {
+    setClubCoordinators(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], ...fields };
+      return updated;
+    });
   };
 
   const handleEditAddCoordinatorRow = () => {
-    setEditClubCoordinators([...editClubCoordinators, { name: "", phone: "", email: "", password: "", roll_number: "" }]);
+    setEditClubCoordinators(prev => [...prev, { name: "", phone: "", email: "", password: "", roll_number: "" }]);
   };
 
   const handleEditRemoveCoordinatorRow = (index: number) => {
-    const updated = [...editClubCoordinators];
-    updated.splice(index, 1);
-    setEditClubCoordinators(updated);
+    setEditClubCoordinators(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Update a single field for one coordinator row (Edit Club)
   const handleEditCoordinatorChange = (index: number, field: string, value: string) => {
-    const updated = [...editClubCoordinators];
-    updated[index] = { ...updated[index], [field]: value };
-    setEditClubCoordinators(updated);
+    setEditClubCoordinators(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  // Update multiple fields at once for one coordinator row (Edit Club) - avoids stale state
+  const handleEditCoordinatorBatchChange = (index: number, fields: Partial<{ name: string; phone: string; email: string; password: string; roll_number: string }>) => {
+    setEditClubCoordinators(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], ...fields };
+      return updated;
+    });
   };
 
   const handleStartEditClub = (club: any) => {
     setSelectedClubToEdit(club);
     setEditClubForm({ name: club.name || "", description: club.description || "" });
-    setEditClubCoordinators(club.coordinators && club.coordinators.length > 0 
+    setEditClubCoordinators(club.coordinators && club.coordinators.length > 0
       ? club.coordinators.map((c: any) => {
-          const coordUser = coordinators.find(user => 
-            (user.email && user.email.toLowerCase() === c.email?.toLowerCase()) ||
-            (user.roll_number && user.roll_number.toUpperCase() === c.roll_number?.toUpperCase())
-          );
-          return {
-            name: c.name || coordUser?.full_name || "",
-            phone: c.phone && c.phone !== 'Unavailable' ? c.phone : (coordUser?.phone && coordUser.phone !== 'Unavailable' ? coordUser.phone : ""),
-            email: c.email && c.email !== 'Unavailable' ? c.email : (coordUser?.email && coordUser.email !== 'Unavailable' ? coordUser.email : ""),
-            password: coordUser?.plain_password || "astro123",
-            roll_number: c.roll_number || coordUser?.roll_number || ""
-          };
-        })
+        const coordUser = coordinators.find(user =>
+          (user.email && user.email.toLowerCase() === c.email?.toLowerCase()) ||
+          (user.roll_number && user.roll_number.toUpperCase() === c.roll_number?.toUpperCase())
+        );
+        return {
+          name: c.name || coordUser?.full_name || "",
+          phone: c.phone && c.phone !== 'Unavailable' ? c.phone : (coordUser?.phone && coordUser.phone !== 'Unavailable' ? coordUser.phone : ""),
+          email: c.email && c.email !== 'Unavailable' ? c.email : (coordUser?.email && coordUser.email !== 'Unavailable' ? coordUser.email : ""),
+          password: coordUser?.plain_password || "astro123",
+          roll_number: c.roll_number || coordUser?.roll_number || ""
+        };
+      })
       : [{ name: "", phone: "", email: "", password: "", roll_number: "" }]
     );
     setIsEditClubDialogOpen(true);
@@ -170,7 +192,7 @@ const AdminDashboard = () => {
       toast.error("Club Name is required");
       return;
     }
-    
+
     // Filter out rows without a name
     const validCoordinators = editClubCoordinators.filter(c => c.name.trim().length > 0);
 
@@ -200,7 +222,7 @@ const AdminDashboard = () => {
         description: clubForm.description,
         coordinators: clubCoordinators.filter(c => c.name.trim() !== "")
       });
-      
+
       toast.success("Club added successfully!");
       setIsAddClubOpen(false);
       setClubForm({ name: "", description: "" });
@@ -247,7 +269,7 @@ const AdminDashboard = () => {
       e.registered_count || 0,
       e.attended_count || 0
     ]);
-    
+
     const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -337,7 +359,7 @@ const AdminDashboard = () => {
 
         let parsedRows: any[] = [];
         const fileExtension = file.name.split('.').pop()?.toLowerCase();
-        
+
         if (fileExtension === "csv") {
           const text = new TextDecoder().decode(data as ArrayBuffer);
           const lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
@@ -348,7 +370,7 @@ const AdminDashboard = () => {
 
           const delimiter = lines[0].includes(";") ? ";" : ",";
           const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase().replace(/['"]/g, ""));
-          
+
           const headerMap: Record<string, string> = {
             "name": "full_name",
             "full name": "full_name",
@@ -399,7 +421,7 @@ const AdminDashboard = () => {
           }
 
           const rawHeaders = (jsonData[0] as any[]).map(h => String(h || "").trim().toLowerCase());
-          
+
           const headerMap: Record<string, string> = {
             "name": "full_name",
             "full name": "full_name",
@@ -525,30 +547,30 @@ const AdminDashboard = () => {
   };
 
   // Filter computations
-  const filteredClubs = clubs.filter(club => 
-    club.name?.toLowerCase().includes(clubsSearch.toLowerCase()) || 
+  const filteredClubs = clubs.filter(club =>
+    club.name?.toLowerCase().includes(clubsSearch.toLowerCase()) ||
     club.description?.toLowerCase().includes(clubsSearch.toLowerCase())
   );
 
   const filteredCoords = coordinators.filter(c => {
-    const matchesSearch = c.full_name?.toLowerCase().includes(coordsSearch.toLowerCase()) || 
-                          c.email?.toLowerCase().includes(coordsSearch.toLowerCase());
+    const matchesSearch = c.full_name?.toLowerCase().includes(coordsSearch.toLowerCase()) ||
+      c.email?.toLowerCase().includes(coordsSearch.toLowerCase());
     const matchesClub = coordsClubFilter === "all" || c.club_id === coordsClubFilter;
     return matchesSearch && matchesClub;
   });
 
   const filteredStudents = students.filter(s => {
-    const matchesSearch = s.full_name?.toLowerCase().includes(studentsSearch.toLowerCase()) || 
-                          s.email?.toLowerCase().includes(studentsSearch.toLowerCase()) || 
-                          s.roll_number?.toLowerCase().includes(studentsSearch.toLowerCase());
+    const matchesSearch = s.full_name?.toLowerCase().includes(studentsSearch.toLowerCase()) ||
+      s.email?.toLowerCase().includes(studentsSearch.toLowerCase()) ||
+      s.roll_number?.toLowerCase().includes(studentsSearch.toLowerCase());
     const matchesDept = studentsDeptFilter === "all" || s.department === studentsDeptFilter;
     const matchesYear = studentsYearFilter === "all" || s.year?.toString() === studentsYearFilter;
     return matchesSearch && matchesDept && matchesYear;
   });
 
   const filteredEvents = events.filter(e => {
-    const matchesSearch = e.name?.toLowerCase().includes(eventsSearch.toLowerCase()) || 
-                          e.description?.toLowerCase().includes(eventsSearch.toLowerCase());
+    const matchesSearch = e.name?.toLowerCase().includes(eventsSearch.toLowerCase()) ||
+      e.description?.toLowerCase().includes(eventsSearch.toLowerCase());
     const matchesClub = eventsClubFilter === "all" || e.club_id === eventsClubFilter;
     return matchesSearch && matchesClub;
   }).sort((a, b) => {
@@ -651,13 +673,22 @@ const AdminDashboard = () => {
               <TabsContent value="clubs" className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold">Clubs</h2>
-                  <Dialog open={isAddClubOpen} onOpenChange={setIsAddClubOpen}>
+                  <Dialog open={isAddClubOpen} onOpenChange={(open) => {
+                    if (!open) {
+                      setClubForm({ name: "", description: "" });
+                      setClubCoordinators([{ name: "", phone: "", email: "", password: "", roll_number: "" }]);
+                      setVisiblePasswords({});
+                    }
+                    setIsAddClubOpen(open);
+                  }}>
                     <DialogTrigger asChild>
                       <Button className="gap-2">
                         <Plus className="w-4 h-4" /> Add Club
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto"
+                      onOpenAutoFocus={(e) => e.preventDefault()}
+                    >
                       <DialogHeader>
                         <DialogTitle>Add New Club</DialogTitle>
                         <DialogDescription>Create a new club for students to join</DialogDescription>
@@ -688,15 +719,15 @@ const AdminDashboard = () => {
                               <Plus className="w-3 h-3" /> Add Coordinator
                             </Button>
                           </div>
-                          
+
                           <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
                             {clubCoordinators.map((coord, index) => (
                               <div key={index} className="p-3 border rounded-lg space-y-2 relative bg-muted/25">
                                 {clubCoordinators.length > 1 && (
-                                  <Button 
-                                    type="button" 
-                                    variant="ghost" 
-                                    size="icon" 
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => handleRemoveCoordinatorRow(index)}
                                     className="absolute top-1 right-1 h-6 w-6 text-destructive hover:bg-destructive/10"
                                   >
@@ -709,22 +740,25 @@ const AdminDashboard = () => {
                                     value={coord.roll_number || ""}
                                     onChange={(e) => {
                                       const inputRoll = e.target.value.toUpperCase();
-                                      handleCoordinatorChange(index, 'roll_number', inputRoll);
-                                      
+
+                                      if (inputRoll.trim() === "") {
+                                        handleCoordinatorBatchChange(index, { roll_number: "", name: "", email: "", phone: "", password: "" });
+                                        return;
+                                      }
+
                                       const foundUser = [...students, ...coordinators].find(
                                         u => String(u.roll_number || '').toUpperCase().trim() === inputRoll.trim()
                                       );
                                       if (foundUser) {
-                                        handleCoordinatorChange(index, 'name', foundUser.full_name);
-                                        handleCoordinatorChange(index, 'email', foundUser.email || `${inputRoll.toLowerCase()}@psgitech.ac.in`);
-                                        handleCoordinatorChange(index, 'phone', foundUser.phone || "");
-                                        if (!coord.password) {
-                                          handleCoordinatorChange(index, 'password', foundUser.plain_password || foundUser.roll_number || "");
-                                        }
+                                        handleCoordinatorBatchChange(index, {
+                                          roll_number: inputRoll,
+                                          name: foundUser.full_name || "",
+                                          email: (!foundUser.email || foundUser.email === 'Unavailable' || foundUser.email.endsWith('@psgitech.ac.in')) ? "" : foundUser.email,
+                                          phone: foundUser.phone === 'Unavailable' ? "" : (foundUser.phone || ""),
+                                          password: foundUser.plain_password || foundUser.roll_number || "",
+                                        });
                                       } else {
-                                        handleCoordinatorChange(index, 'name', "");
-                                        handleCoordinatorChange(index, 'email', `${inputRoll.toLowerCase()}@psgitech.ac.in`);
-                                        handleCoordinatorChange(index, 'phone', "");
+                                        handleCoordinatorBatchChange(index, { roll_number: inputRoll, name: "", email: "", phone: "", password: "" });
                                       }
                                     }}
                                     placeholder="Enter Student Roll Number"
@@ -733,8 +767,8 @@ const AdminDashboard = () => {
                                   {coord.roll_number && coord.roll_number.length >= 2 && !coord.name && (
                                     <div className="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[150px] overflow-y-auto divide-y divide-slate-100 text-xs">
                                       {students
-                                        .filter(s => 
-                                          String(s.roll_number || '').toUpperCase().includes(coord.roll_number.toUpperCase()) || 
+                                        .filter(s =>
+                                          String(s.roll_number || '').toUpperCase().includes(coord.roll_number.toUpperCase()) ||
                                           s.full_name?.toUpperCase().includes(coord.roll_number.toUpperCase())
                                         )
                                         .slice(0, 5)
@@ -743,11 +777,13 @@ const AdminDashboard = () => {
                                             key={s.id || s._id}
                                             className="p-2 hover:bg-slate-50 cursor-pointer flex justify-between bg-white text-slate-800"
                                             onMouseDown={() => {
-                                              handleCoordinatorChange(index, 'roll_number', s.roll_number);
-                                              handleCoordinatorChange(index, 'name', s.full_name);
-                                              handleCoordinatorChange(index, 'email', s.email);
-                                              handleCoordinatorChange(index, 'phone', s.phone || "");
-                                              handleCoordinatorChange(index, 'password', s.plain_password || s.roll_number || "");
+                                              handleCoordinatorBatchChange(index, {
+                                                roll_number: s.roll_number,
+                                                name: s.full_name,
+                                                email: (!s.email || s.email === 'Unavailable' || s.email.endsWith('@psgitech.ac.in')) ? "" : s.email,
+                                                phone: s.phone === 'Unavailable' ? "" : (s.phone || ""),
+                                                password: s.plain_password || s.roll_number || "",
+                                              });
                                             }}
                                           >
                                             <span className="font-semibold">{s.full_name}</span>
@@ -884,173 +920,173 @@ const AdminDashboard = () => {
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Coordinator</DialogTitle>
-                        <DialogDescription>Create a coordinator and assign to a club</DialogDescription>
-                      </DialogHeader>
-                       <div className="space-y-4">
-                        <div className="space-y-2 relative">
-                          <Label>Student Roll Number *</Label>
-                          <Input
-                            value={coordinatorForm.roll_number || ""}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                              const inputRoll = e.target.value.toUpperCase();
-                              const foundStudent = students.find(s => String(s.roll_number || '').toUpperCase().trim() === inputRoll.trim());
-                              
-                              let foundClubCoord = null;
-                              let foundClubId = "";
-                              for (const club of clubs) {
-                                const matched = club.coordinators?.find(c => String(c.roll_number || '').toUpperCase().trim() === inputRoll.trim());
-                                if (matched) {
-                                  foundClubCoord = matched;
-                                  foundClubId = club.id;
-                                  break;
+                        <DialogHeader>
+                          <DialogTitle>Add New Coordinator</DialogTitle>
+                          <DialogDescription>Create a coordinator and assign to a club</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2 relative">
+                            <Label>Student Roll Number *</Label>
+                            <Input
+                              value={coordinatorForm.roll_number || ""}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                const inputRoll = e.target.value.toUpperCase();
+                                const foundStudent = students.find(s => String(s.roll_number || '').toUpperCase().trim() === inputRoll.trim());
+
+                                let foundClubCoord = null;
+                                let foundClubId = "";
+                                for (const club of clubs) {
+                                  const matched = club.coordinators?.find(c => String(c.roll_number || '').toUpperCase().trim() === inputRoll.trim());
+                                  if (matched) {
+                                    foundClubCoord = matched;
+                                    foundClubId = club.id;
+                                    break;
+                                  }
                                 }
-                              }
 
-                              if (foundStudent || foundClubCoord) {
-                                const matchedName = foundStudent?.full_name || foundClubCoord?.name || "";
-                                const matchedPhone = foundStudent?.phone || foundClubCoord?.phone || "";
-                                const matchedEmail = foundStudent?.email || foundClubCoord?.email || `${inputRoll.toLowerCase()}@psgitech.ac.in`;
+                                if (foundStudent || foundClubCoord) {
+                                  const matchedName = foundStudent?.full_name || foundClubCoord?.name || "";
+                                  const matchedPhone = foundStudent?.phone || foundClubCoord?.phone || "";
+                                  const matchedEmail = foundStudent?.email || foundClubCoord?.email || `${inputRoll.toLowerCase()}@psgitech.ac.in`;
 
-                                setCoordinatorForm({
-                                  ...coordinatorForm,
-                                  roll_number: inputRoll,
-                                  full_name: matchedName,
-                                  phone: matchedPhone === "Unavailable" ? "" : matchedPhone,
-                                  email: matchedEmail === "Unavailable" ? "" : matchedEmail,
-                                  club_id: foundClubId || coordinatorForm.club_id,
-                                  password: coordinatorForm.password || foundStudent?.plain_password || foundStudent?.roll_number || ""
-                                });
-                              } else {
-                                setCoordinatorForm({
-                                  ...coordinatorForm,
-                                  roll_number: inputRoll,
-                                  full_name: "",
-                                  phone: "",
-                                  email: `${inputRoll.toLowerCase()}@psgitech.ac.in`
-                                });
-                              }
-                            }}
-                            placeholder="Enter Student Roll Number"
-                          />
-                          {coordinatorForm.roll_number && coordinatorForm.roll_number.length >= 2 && !coordinatorForm.full_name && (
-                            <div className="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[150px] overflow-y-auto divide-y divide-slate-100 text-xs">
-                              {students
-                                .filter(s => 
-                                  String(s.roll_number || '').toUpperCase().includes(coordinatorForm.roll_number.toUpperCase()) || 
-                                  s.full_name?.toUpperCase().includes(coordinatorForm.roll_number.toUpperCase())
-                                )
-                                .slice(0, 5)
-                                .map((s) => (
-                                  <div
-                                    key={s.id || s._id}
-                                    className="p-2 hover:bg-slate-50 cursor-pointer flex justify-between bg-white text-slate-800"
-                                    onMouseDown={() => {
-                                      let foundClubCoord = null;
-                                      let foundClubId = "";
-                                      for (const club of clubs) {
-                                        const matched = club.coordinators?.find(c => String(c.roll_number || '').toUpperCase().trim() === String(s.roll_number || '').toUpperCase().trim());
-                                        if (matched) {
-                                          foundClubCoord = matched;
-                                          foundClubId = club.id;
-                                          break;
+                                  setCoordinatorForm({
+                                    ...coordinatorForm,
+                                    roll_number: inputRoll,
+                                    full_name: matchedName,
+                                    phone: matchedPhone === "Unavailable" ? "" : matchedPhone,
+                                    email: matchedEmail === "Unavailable" ? "" : matchedEmail,
+                                    club_id: foundClubId || coordinatorForm.club_id,
+                                    password: coordinatorForm.password || foundStudent?.plain_password || foundStudent?.roll_number || ""
+                                  });
+                                } else {
+                                  setCoordinatorForm({
+                                    ...coordinatorForm,
+                                    roll_number: inputRoll,
+                                    full_name: "",
+                                    phone: "",
+                                    email: `${inputRoll.toLowerCase()}@psgitech.ac.in`
+                                  });
+                                }
+                              }}
+                              placeholder="Enter Student Roll Number"
+                            />
+                            {coordinatorForm.roll_number && coordinatorForm.roll_number.length >= 2 && !coordinatorForm.full_name && (
+                              <div className="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[150px] overflow-y-auto divide-y divide-slate-100 text-xs">
+                                {students
+                                  .filter(s =>
+                                    String(s.roll_number || '').toUpperCase().includes(coordinatorForm.roll_number.toUpperCase()) ||
+                                    s.full_name?.toUpperCase().includes(coordinatorForm.roll_number.toUpperCase())
+                                  )
+                                  .slice(0, 5)
+                                  .map((s) => (
+                                    <div
+                                      key={s.id || s._id}
+                                      className="p-2 hover:bg-slate-50 cursor-pointer flex justify-between bg-white text-slate-800"
+                                      onMouseDown={() => {
+                                        let foundClubCoord = null;
+                                        let foundClubId = "";
+                                        for (const club of clubs) {
+                                          const matched = club.coordinators?.find(c => String(c.roll_number || '').toUpperCase().trim() === String(s.roll_number || '').toUpperCase().trim());
+                                          if (matched) {
+                                            foundClubCoord = matched;
+                                            foundClubId = club.id;
+                                            break;
+                                          }
                                         }
-                                      }
 
-                                      const matchedPhone = s.phone || foundClubCoord?.phone || "";
-                                      const matchedEmail = s.email || foundClubCoord?.email || "";
+                                        const matchedPhone = s.phone || foundClubCoord?.phone || "";
+                                        const matchedEmail = s.email || foundClubCoord?.email || "";
 
-                                      setCoordinatorForm({
-                                        ...coordinatorForm,
-                                        roll_number: s.roll_number,
-                                        full_name: s.full_name,
-                                        phone: matchedPhone === "Unavailable" ? "" : matchedPhone,
-                                        email: matchedEmail === "Unavailable" ? "" : matchedEmail,
-                                        club_id: foundClubId || coordinatorForm.club_id,
-                                        password: s.plain_password || s.roll_number || ""
-                                      });
-                                    }}
-                                  >
-                                    <span className="font-semibold">{s.full_name}</span>
-                                    <span className="text-slate-400">{s.roll_number}</span>
-                                  </div>
-                                ))
+                                        setCoordinatorForm({
+                                          ...coordinatorForm,
+                                          roll_number: s.roll_number,
+                                          full_name: s.full_name,
+                                          phone: matchedPhone === "Unavailable" ? "" : matchedPhone,
+                                          email: matchedEmail === "Unavailable" ? "" : matchedEmail,
+                                          club_id: foundClubId || coordinatorForm.club_id,
+                                          password: s.plain_password || s.roll_number || ""
+                                        });
+                                      }}
+                                    >
+                                      <span className="font-semibold">{s.full_name}</span>
+                                      <span className="text-slate-400">{s.roll_number}</span>
+                                    </div>
+                                  ))
+                                }
+                              </div>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Full Name *</Label>
+                            <Input
+                              value={coordinatorForm.full_name || ""}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setCoordinatorForm({ ...coordinatorForm, full_name: e.target.value })
                               }
-                            </div>
-                          )}
+                              placeholder="Enter coordinator's full name"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Phone Number</Label>
+                            <Input
+                              type="tel"
+                              value={coordinatorForm.phone || ""}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setCoordinatorForm({ ...coordinatorForm, phone: e.target.value })
+                              }
+                              placeholder="Enter phone number (optional)"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Email Address</Label>
+                            <Input
+                              type="email"
+                              value={coordinatorForm.email || ""}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setCoordinatorForm({ ...coordinatorForm, email: e.target.value })
+                              }
+                              placeholder="Enter email address (optional)"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Set Password *</Label>
+                            <Input
+                              type="text"
+                              value={coordinatorForm.password}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setCoordinatorForm({ ...coordinatorForm, password: e.target.value })
+                              }
+                              placeholder="Set password for coordinator"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Assign to Club</Label>
+                            <Select
+                              value={coordinatorForm.club_id}
+                              onValueChange={(value: string) =>
+                                setCoordinatorForm({ ...coordinatorForm, club_id: value })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a club" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {clubs.map((club) => (
+                                  <SelectItem key={club.id} value={club.id}>
+                                    {club.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button onClick={handleAddCoordinator} className="w-full">
+                            Add Coordinator
+                          </Button>
                         </div>
-                        <div className="space-y-2">
-                          <Label>Full Name *</Label>
-                          <Input
-                            value={coordinatorForm.full_name || ""}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              setCoordinatorForm({ ...coordinatorForm, full_name: e.target.value })
-                            }
-                            placeholder="Enter coordinator's full name"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Phone Number</Label>
-                          <Input
-                            type="tel"
-                            value={coordinatorForm.phone || ""}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              setCoordinatorForm({ ...coordinatorForm, phone: e.target.value })
-                            }
-                            placeholder="Enter phone number (optional)"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Email Address</Label>
-                          <Input
-                            type="email"
-                            value={coordinatorForm.email || ""}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              setCoordinatorForm({ ...coordinatorForm, email: e.target.value })
-                            }
-                            placeholder="Enter email address (optional)"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Set Password *</Label>
-                          <Input
-                            type="text"
-                            value={coordinatorForm.password}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              setCoordinatorForm({ ...coordinatorForm, password: e.target.value })
-                            }
-                            placeholder="Set password for coordinator"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Assign to Club</Label>
-                          <Select
-                            value={coordinatorForm.club_id}
-                            onValueChange={(value: string) =>
-                              setCoordinatorForm({ ...coordinatorForm, club_id: value })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a club" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {clubs.map((club) => (
-                                <SelectItem key={club.id} value={club.id}>
-                                  {club.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Button onClick={handleAddCoordinator} className="w-full">
-                          Add Coordinator
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
-              </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 pb-2 w-full sm:max-w-2xl">
                   <Input
@@ -1079,7 +1115,12 @@ const AdminDashboard = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <CardTitle>{coordinator.full_name}</CardTitle>
-                            <CardDescription>{coordinator.roll_number || "No Roll"} • Phone: {coordinator.phone || "Unavailable"}</CardDescription>
+                            <CardDescription>
+                              {coordinator.roll_number || "No Roll"} • {coordinator.email && coordinator.email !== "Unavailable" ? coordinator.email : "No Email"}
+                            </CardDescription>
+                            <p className="text-xs text-muted-foreground">
+                              📞 {coordinator.phone && coordinator.phone !== "Unavailable" ? coordinator.phone : "No Phone"}
+                            </p>
                             <p className="text-xs font-semibold text-primary mt-1">
                               Club: {coordinator.club_name || "Unassigned"}
                             </p>
@@ -1337,7 +1378,7 @@ const AdminDashboard = () => {
             <DialogTitle>Annual Events Summary Report</DialogTitle>
             <DialogDescription>List of all events organized up to {new Date().toLocaleDateString()}</DialogDescription>
           </DialogHeader>
-          
+
           <div className="border rounded-md overflow-hidden bg-white mt-4">
             <div className="max-h-[50vh] overflow-y-auto">
               <table className="w-full text-left border-collapse text-sm">
@@ -1370,7 +1411,7 @@ const AdminDashboard = () => {
               </table>
             </div>
           </div>
-          
+
           <div className="flex justify-end gap-3 mt-4">
             <Button variant="outline" onClick={() => handleExportEventsCSV()} className="gap-1.5">
               <Download className="w-4 h-4" /> Download Annual Report (Excel)
@@ -1605,15 +1646,15 @@ const AdminDashboard = () => {
                   <Plus className="w-3 h-3" /> Add Coordinator
                 </Button>
               </div>
-              
+
               <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
                 {editClubCoordinators.map((coord, index) => (
                   <div key={index} className="p-3 border rounded-lg space-y-2 relative bg-muted/25">
                     {editClubCoordinators.length > 1 && (
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleEditRemoveCoordinatorRow(index)}
                         className="absolute top-1 right-1 h-6 w-6 text-destructive hover:bg-destructive/10"
                       >
@@ -1626,22 +1667,25 @@ const AdminDashboard = () => {
                         value={coord.roll_number || ""}
                         onChange={(e) => {
                           const inputRoll = e.target.value.toUpperCase();
-                          handleEditCoordinatorChange(index, 'roll_number', inputRoll);
-                          
+
+                          if (inputRoll.trim() === "") {
+                            handleEditCoordinatorBatchChange(index, { roll_number: "", name: "", email: "", phone: "", password: "" });
+                            return;
+                          }
+
                           const foundUser = [...students, ...coordinators].find(
                             u => String(u.roll_number || '').toUpperCase().trim() === inputRoll.trim()
                           );
                           if (foundUser) {
-                            handleEditCoordinatorChange(index, 'name', foundUser.full_name);
-                            handleEditCoordinatorChange(index, 'email', foundUser.email || `${inputRoll.toLowerCase()}@psgitech.ac.in`);
-                            handleEditCoordinatorChange(index, 'phone', foundUser.phone || "");
-                            if (!coord.password) {
-                              handleEditCoordinatorChange(index, 'password', foundUser.plain_password || foundUser.roll_number || "");
-                            }
+                            handleEditCoordinatorBatchChange(index, {
+                              roll_number: inputRoll,
+                              name: foundUser.full_name || "",
+                              email: (!foundUser.email || foundUser.email === 'Unavailable' || foundUser.email.endsWith('@psgitech.ac.in')) ? "" : foundUser.email,
+                              phone: foundUser.phone === 'Unavailable' ? "" : (foundUser.phone || ""),
+                              password: coord.password || foundUser.plain_password || foundUser.roll_number || "",
+                            });
                           } else {
-                            handleEditCoordinatorChange(index, 'name', "");
-                            handleEditCoordinatorChange(index, 'email', `${inputRoll.toLowerCase()}@psgitech.ac.in`);
-                            handleEditCoordinatorChange(index, 'phone', "");
+                            handleEditCoordinatorBatchChange(index, { roll_number: inputRoll, name: "", email: "", phone: "", password: "" });
                           }
                         }}
                         placeholder="Enter Student Roll Number"
@@ -1650,8 +1694,8 @@ const AdminDashboard = () => {
                       {coord.roll_number && coord.roll_number.length >= 2 && !coord.name && (
                         <div className="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[150px] overflow-y-auto divide-y divide-slate-100 text-xs">
                           {students
-                            .filter(s => 
-                              String(s.roll_number || '').toUpperCase().includes(coord.roll_number.toUpperCase()) || 
+                            .filter(s =>
+                              String(s.roll_number || '').toUpperCase().includes(coord.roll_number.toUpperCase()) ||
                               s.full_name?.toUpperCase().includes(coord.roll_number.toUpperCase())
                             )
                             .slice(0, 5)
@@ -1660,11 +1704,13 @@ const AdminDashboard = () => {
                                 key={s.id || s._id}
                                 className="p-2 hover:bg-slate-50 cursor-pointer flex justify-between bg-white text-slate-800"
                                 onMouseDown={() => {
-                                  handleEditCoordinatorChange(index, 'roll_number', s.roll_number);
-                                  handleEditCoordinatorChange(index, 'name', s.full_name);
-                                  handleEditCoordinatorChange(index, 'email', s.email);
-                                  handleEditCoordinatorChange(index, 'phone', s.phone || "");
-                                  handleEditCoordinatorChange(index, 'password', s.plain_password || s.roll_number || "");
+                                  handleEditCoordinatorBatchChange(index, {
+                                    roll_number: s.roll_number,
+                                    name: s.full_name,
+                                    email: (!s.email || s.email === 'Unavailable' || s.email.endsWith('@psgitech.ac.in')) ? "" : s.email,
+                                    phone: s.phone === 'Unavailable' ? "" : (s.phone || ""),
+                                    password: coord.password || s.plain_password || s.roll_number || "",
+                                  });
                                 }}
                               >
                                 <span className="font-semibold">{s.full_name}</span>
