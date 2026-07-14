@@ -707,7 +707,7 @@ const AdminDashboard = () => {
                                       handleCoordinatorChange(index, 'roll_number', inputRoll);
                                       
                                       const foundUser = [...students, ...coordinators].find(
-                                        u => u.roll_number?.toUpperCase().trim() === inputRoll.trim()
+                                        u => String(u.roll_number || '').toUpperCase().trim() === inputRoll.trim()
                                       );
                                       if (foundUser) {
                                         handleCoordinatorChange(index, 'name', foundUser.full_name);
@@ -729,7 +729,7 @@ const AdminDashboard = () => {
                                     <div className="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[150px] overflow-y-auto divide-y divide-slate-100 text-xs">
                                       {students
                                         .filter(s => 
-                                          s.roll_number?.toUpperCase().includes(coord.roll_number.toUpperCase()) || 
+                                          String(s.roll_number || '').toUpperCase().includes(coord.roll_number.toUpperCase()) || 
                                           s.full_name?.toUpperCase().includes(coord.roll_number.toUpperCase())
                                         )
                                         .slice(0, 5)
@@ -869,7 +869,7 @@ const AdminDashboard = () => {
                             value={coordinatorForm.roll_number || ""}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                               const inputRoll = e.target.value.toUpperCase();
-                              const foundStudent = students.find(s => s.roll_number?.toUpperCase().trim() === inputRoll.trim());
+                              const foundStudent = students.find(s => String(s.roll_number || '').toUpperCase().trim() === inputRoll.trim());
                               if (foundStudent) {
                                 setCoordinatorForm({
                                   ...coordinatorForm,
@@ -895,7 +895,7 @@ const AdminDashboard = () => {
                             <div className="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[150px] overflow-y-auto divide-y divide-slate-100 text-xs">
                               {students
                                 .filter(s => 
-                                  s.roll_number?.toUpperCase().includes(coordinatorForm.roll_number.toUpperCase()) || 
+                                  String(s.roll_number || '').toUpperCase().includes(coordinatorForm.roll_number.toUpperCase()) || 
                                   s.full_name?.toUpperCase().includes(coordinatorForm.roll_number.toUpperCase())
                                 )
                                 .slice(0, 5)
@@ -1521,7 +1521,7 @@ const AdminDashboard = () => {
                           handleEditCoordinatorChange(index, 'roll_number', inputRoll);
                           
                           const foundUser = [...students, ...coordinators].find(
-                            u => u.roll_number?.toUpperCase().trim() === inputRoll.trim()
+                            u => String(u.roll_number || '').toUpperCase().trim() === inputRoll.trim()
                           );
                           if (foundUser) {
                             handleEditCoordinatorChange(index, 'name', foundUser.full_name);
@@ -1543,7 +1543,7 @@ const AdminDashboard = () => {
                         <div className="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[150px] overflow-y-auto divide-y divide-slate-100 text-xs">
                           {students
                             .filter(s => 
-                              s.roll_number?.toUpperCase().includes(coord.roll_number.toUpperCase()) || 
+                              String(s.roll_number || '').toUpperCase().includes(coord.roll_number.toUpperCase()) || 
                               s.full_name?.toUpperCase().includes(coord.roll_number.toUpperCase())
                             )
                             .slice(0, 5)
