@@ -1,1 +1,1 @@
-feat: redesign admin student/coordinator cards and implement dynamic profile reloading
+feat: report phone field in backend /login and /me endpoints to sync dashboard headers

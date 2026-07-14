@@ -64,7 +64,8 @@ router.post('/login', async (req, res) => {
         roll_number: user.roll_number,
         department: user.department,
         section: user.section,
-        year: user.year
+        year: user.year,
+        phone: user.phone || 'Unavailable'
       }
     });
   } catch (error) {
@@ -86,7 +87,8 @@ router.get('/me', authenticateToken, async (req, res) => {
       roll_number: user.roll_number,
       department: user.department,
       section: user.section,
-      year: user.year
+      year: user.year,
+      phone: user.phone || 'Unavailable'
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -110,7 +112,7 @@ router.get('/users/coordinators', authenticateToken, requireAdmin, async (req, r
       const cRoll = String(c.roll_number || '').toUpperCase().trim();
       const cEmail = String(c.email || '').toLowerCase().trim();
 
-      const assignedClub = clubs.find(club => 
+      const assignedClub = clubs.find(club =>
         club.coordinators?.some(coord => {
           const coordRoll = String(coord.roll_number || '').toUpperCase().trim();
           const coordEmail = String(coord.email || '').toLowerCase().trim();
@@ -125,8 +127,8 @@ router.get('/users/coordinators', authenticateToken, requireAdmin, async (req, r
       });
 
       const finalPhone = c.phone && c.phone !== 'Unavailable' ? c.phone : (matchedCoord?.phone || 'Unavailable');
-      const finalEmail = (!c.email || c.email.endsWith('@psgitech.ac.in') || c.email === 'Unavailable') 
-        ? (matchedCoord?.email && !matchedCoord.email.endsWith('@psgitech.ac.in') && matchedCoord.email !== 'Unavailable' ? matchedCoord.email : 'Unavailable') 
+      const finalEmail = (!c.email || c.email.endsWith('@psgitech.ac.in') || c.email === 'Unavailable')
+        ? (matchedCoord?.email && !matchedCoord.email.endsWith('@psgitech.ac.in') && matchedCoord.email !== 'Unavailable' ? matchedCoord.email : 'Unavailable')
         : c.email;
 
       return {
@@ -242,7 +244,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
     const { phone, email } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
     if (user.role === 'coordinator') {
       const oldRoll = String(user.roll_number || '').toUpperCase().trim();
       const oldEmail = String(user.email || '').toLowerCase().trim();
@@ -294,7 +296,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
       }
       await user.save();
     }
-    
+
     res.json({ message: 'Profile updated successfully', user });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Server error' });
