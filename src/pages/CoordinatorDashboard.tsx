@@ -28,7 +28,7 @@ const clubGradients = [
 ];
 
 const CoordinatorDashboard = () => {
-  const { profile, signOut, loading } = useAuth();
+  const { profile, signOut, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [myClubs, setMyClubs] = useState<any[]>([]);
   const [myEvents, setMyEvents] = useState<any[]>([]);
@@ -74,6 +74,7 @@ const CoordinatorDashboard = () => {
       toast.success("Profile details updated successfully!");
       setIsUpdatePhoneOpen(false);
       fetchData();
+      await refreshProfile();
     } catch (err: any) {
       toast.error("Failed to update profile: " + err.message);
     }
@@ -898,8 +899,8 @@ const CoordinatorDashboard = () => {
                           <div
                             key={badge.level}
                             className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${isUnlocked
-                                ? "bg-card border-amber-500/30 shadow-md scale-100 opacity-100 hover:scale-105 hover:shadow-lg duration-300"
-                                : "bg-muted/30 border-muted opacity-40 grayscale"
+                              ? "bg-card border-amber-500/30 shadow-md scale-100 opacity-100 hover:scale-105 hover:shadow-lg duration-300"
+                              : "bg-muted/30 border-muted opacity-40 grayscale"
                               }`}
                           >
                             <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${badge.color} text-white flex items-center justify-center text-xl shadow-inner mb-2`}>

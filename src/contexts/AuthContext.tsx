@@ -21,6 +21,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any; role?: string }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,8 +76,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     navigate("/login");
   };
 
+  const refreshProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const data = await api.get("/api/auth/me");
+        setProfile(data);
+        setUser({ id: data.id, role: data.role, full_name: data.full_name });
+      } catch (err) {
+        // Ignore silent refresh failure
+      }
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, session, loading, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

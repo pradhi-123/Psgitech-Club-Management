@@ -1,0 +1,1 @@
+feat: redesign admin student/coordinator cards and implement dynamic profile reloading

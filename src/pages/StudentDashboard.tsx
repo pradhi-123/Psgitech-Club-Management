@@ -27,7 +27,7 @@ const clubGradients = [
 ];
 
 const StudentDashboard = () => {
-  const { profile, signOut, loading } = useAuth();
+  const { profile, signOut, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [credits, setCredits] = useState({ total_points: 0, events_attended: 0, badges_earned: 0 });
   const [clubs, setClubs] = useState<any[]>([]);
@@ -148,6 +148,7 @@ const StudentDashboard = () => {
       toast.success("Profile details updated successfully!");
       setIsUpdatePhoneOpen(false);
       fetchData();
+      await refreshProfile();
     } catch (err: any) {
       toast.error("Failed to update profile: " + err.message);
     }
