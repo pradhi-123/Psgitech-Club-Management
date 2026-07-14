@@ -922,12 +922,27 @@ const AdminDashboard = () => {
                             </div>
                           )}
                         </div>
-                        {coordinatorForm.full_name && (
-                          <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-3 rounded-lg border border-dashed text-slate-500">
-                            <div><span className="font-semibold text-slate-600">Full Name:</span> {coordinatorForm.full_name}</div>
-                            <div><span className="font-semibold text-slate-600">Phone:</span> {coordinatorForm.phone || "-"}</div>
-                          </div>
-                        )}
+                        <div className="space-y-2">
+                          <Label>Full Name *</Label>
+                          <Input
+                            value={coordinatorForm.full_name || ""}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              setCoordinatorForm({ ...coordinatorForm, full_name: e.target.value })
+                            }
+                            placeholder="Enter coordinator's full name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Phone Number</Label>
+                          <Input
+                            type="tel"
+                            value={coordinatorForm.phone || ""}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              setCoordinatorForm({ ...coordinatorForm, phone: e.target.value })
+                            }
+                            placeholder="Enter phone number (optional)"
+                          />
+                        </div>
                         <div className="space-y-2">
                           <Label>Set Password *</Label>
                           <Input
@@ -995,7 +1010,7 @@ const AdminDashboard = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <CardTitle>{coordinator.full_name}</CardTitle>
-                            <CardDescription>{coordinator.roll_number || "No Roll"} {coordinator.phone && `• ${coordinator.phone}`}</CardDescription>
+                            <CardDescription>{coordinator.roll_number || "No Roll"} • Phone: {coordinator.phone || "Unavailable"}</CardDescription>
                             <p className="text-xs font-semibold text-primary mt-1">
                               Club: {coordinator.club_name || "Unassigned"}
                             </p>
@@ -1157,7 +1172,7 @@ const AdminDashboard = () => {
                             <CardTitle>{student.full_name}</CardTitle>
                             <CardDescription>
                               {student.roll_number} • {student.department} • {student.section} • Year{" "}
-                              {student.year}
+                              {student.year} • Phone: {student.phone || "Unavailable"}
                             </CardDescription>
                           </div>
                           <div className="flex gap-2">

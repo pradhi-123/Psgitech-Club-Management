@@ -65,9 +65,17 @@ const CoordinatorDashboard = () => {
 
   // Notification States
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
+  const [isUpdatePhoneOpen, setIsUpdatePhoneOpen] = useState(false);
+  const [newPhoneNumber, setNewPhoneNumber] = useState(profile?.phone || "");
   const [dismissedNotifications, setDismissedNotifications] = useState<string[]>(() => {
     return JSON.parse(localStorage.getItem("dismissed_notifications_coord") || "[]");
   });
+
+  useEffect(() => {
+    if (profile?.phone) {
+      setNewPhoneNumber(profile.phone);
+    }
+  }, [profile]);
 
   const handleDismissNotification = (id: string) => {
     const updated = [...dismissedNotifications, id];
@@ -245,6 +253,17 @@ const CoordinatorDashboard = () => {
 
     setSelectedEventId(eventId);
     setConfirmDialogOpen(true);
+  };
+
+  const handleUpdatePhoneNumber = async () => {
+    try {
+      await api.put("/api/auth/users/profile/phone", { phone: newPhoneNumber });
+      toast.success("Phone number updated successfully!");
+      setIsUpdatePhoneOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error("Failed to update phone number: " + err.message);
+    }
   };
 
   const handleRegisterEvent = async () => {
@@ -478,6 +497,37 @@ const CoordinatorDashboard = () => {
                     )}
                     <span className="hidden sm:inline">Notifications</span>
                   </Button>
+                  <Dialog open={isUpdatePhoneOpen} onOpenChange={setIsUpdatePhoneOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="secondary" size="sm" className="gap-1.5 sm:gap-2">
+                        <Phone className="w-3.5 h-3.5 sm:w-4 h-4" />
+                        <span className="hidden sm:inline">Update Phone</span>
+                        <span className="sm:hidden">Phone</span>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-[90vw] sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Update Phone Number</DialogTitle>
+                        <DialogDescription>Update your contact phone number below.</DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-2">
+                        <div className="space-y-2">
+                          <Label className="text-slate-700">Phone Number</Label>
+                          <Input
+                            type="tel"
+                            value={newPhoneNumber}
+                            onChange={(e) => setNewPhoneNumber(e.target.value)}
+                            placeholder="Enter new phone number"
+                            className="text-slate-800"
+                          />
+                        </div>
+                        <Button onClick={handleUpdatePhoneNumber} className="w-full bg-gradient-primary">
+                          Save Phone Number
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
                   <Button onClick={signOut} variant="secondary" size="sm" className="gap-1.5 sm:gap-2">
                     <LogOut className="w-3 h-3 sm:w-4 sm:h-4" /> 
                     <span className="hidden sm:inline">Logout</span>

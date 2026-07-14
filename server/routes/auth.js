@@ -114,7 +114,7 @@ router.get('/users/coordinators', authenticateToken, requireAdmin, async (req, r
         id: c._id,
         full_name: c.full_name,
         email: c.email,
-        phone: c.phone || '',
+        phone: c.phone || 'Unavailable',
         role: c.role,
         plain_password: c.plain_password || '',
         club_name: assignedClub ? assignedClub.name : 'Unassigned',
@@ -129,7 +129,7 @@ router.get('/users/coordinators', authenticateToken, requireAdmin, async (req, r
 // GET /api/users/students (fetch all students)
 router.get('/users/students', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const students = await User.find({ role: 'student' }).select('-password');
+    const students = await User.find({ role: { $in: ['student', 'coordinator'] } }).select('-password');
     res.json(students.map(s => ({
       id: s._id,
       full_name: s.full_name,
@@ -139,6 +139,7 @@ router.get('/users/students', authenticateToken, requireAdmin, async (req, res) 
       department: s.department,
       section: s.section,
       year: s.year,
+      phone: s.phone || 'Unavailable',
       plain_password: s.plain_password || ''
     })));
   } catch (error) {
@@ -210,6 +211,20 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
     }
 
     res.status(201).json({ message: 'User created successfully', id: newUser._id });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Server error' });
+  }
+});
+
+// PUT /api/auth/users/profile/phone (Update phone - Self functionality)
+router.put('/users/profile/phone', authenticateToken, async (req, res) => {
+  try {
+    const { phone } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.phone = phone !== undefined ? phone.trim() : user.phone;
+    await user.save();
+    res.json({ message: 'Phone number updated successfully', user });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Server error' });
   }
