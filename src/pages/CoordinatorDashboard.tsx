@@ -70,7 +70,7 @@ const CoordinatorDashboard = () => {
   const [newEmail, setNewEmail] = useState("");
   const handleUpdateProfile = async () => {
     try {
-      await api.put("/api/auth/users/profile", { phone: newPhoneNumber, email: newEmail });
+      await api.put("/api/auth/profile", { phone: newPhoneNumber, email: newEmail });
       toast.success("Profile details updated successfully!");
       setIsUpdatePhoneOpen(false);
       fetchData();
@@ -150,7 +150,13 @@ const CoordinatorDashboard = () => {
 
       // Filter clubs where this coordinator's email matches one of the coordinators
       const myClubsFiltered = clubsData?.filter((club: any) => 
-        club.coordinators?.some((c: any) => c.email?.toLowerCase() === profile?.email?.toLowerCase())
+        club.coordinators?.some((c: any) => {
+          const coordRoll = String(c.roll_number || '').toUpperCase().trim();
+          const coordEmail = String(c.email || '').toLowerCase().trim();
+          const userRoll = String(profile?.roll_number || '').toUpperCase().trim();
+          const userEmail = String(profile?.email || '').toLowerCase().trim();
+          return (coordRoll !== '' && coordRoll === userRoll) || (coordEmail !== '' && coordEmail === userEmail);
+        })
       ) || [];
 
       setMyClubs(myClubsFiltered);

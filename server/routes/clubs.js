@@ -46,36 +46,56 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       coordinators: coordinators || []
     });
 
-    // Create User documents for coordinators if password is provided and email doesn't exist
+    // Create User documents for coordinators if password is provided
     if (coordinators && coordinators.length > 0) {
       for (const coord of coordinators) {
-        console.log('[CREATE CLUB] Checking coordinator:', coord.email, 'has password:', !!coord.password);
-          const existingUser = await User.findOne({ email: coord.email.toLowerCase().trim() });
-          console.log('[CREATE CLUB] Existing user check:', coord.email, 'found:', !!existingUser);
-          if (!existingUser) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(coord.password, salt);
-            const newUser = await User.create({
-              email: coord.email.toLowerCase().trim(),
-              password: hashedPassword,
-              plain_password: coord.password,
-              full_name: coord.name,
-              role: 'coordinator',
-              phone: coord.phone || ''
-            });
-            console.log('[CREATE CLUB] Created User account:', newUser._id);
+        console.log('[CREATE CLUB] Checking coordinator:', coord.email);
+        
+        let existingUser = null;
+        if (coord.roll_number) {
+          existingUser = await User.findOne({ roll_number: coord.roll_number.toUpperCase().trim() });
+        }
+        if (!existingUser && coord.email && coord.email !== 'Unavailable' && coord.email.trim() !== '') {
+          existingUser = await User.findOne({ email: coord.email.toLowerCase().trim() });
+        }
+
+        let targetEmail = coord.email;
+        if (!targetEmail || targetEmail === 'Unavailable' || targetEmail.trim() === '') {
+          if (coord.roll_number) {
+            targetEmail = `${coord.roll_number.toLowerCase()}@psgitech.ac.in`;
           } else {
-            existingUser.role = 'coordinator';
-            existingUser.full_name = coord.name || existingUser.full_name;
-            existingUser.phone = coord.phone || existingUser.phone || '';
-            if (coord.password && coord.password.trim() !== '') {
-              const salt = await bcrypt.genSalt(10);
-              existingUser.password = await bcrypt.hash(coord.password, salt);
-              existingUser.plain_password = coord.password;
-            }
-            await existingUser.save();
-            console.log('[CREATE CLUB] Updated existing User to coordinator:', existingUser._id);
+            targetEmail = `placeholder-${Math.random().toString(36).substring(2, 9)}@placeholder.com`;
           }
+        }
+
+        if (!existingUser) {
+          const defaultPassword = coord.password || coord.roll_number || 'psgitech123';
+          const salt = await bcrypt.genSalt(10);
+          const hashedPassword = await bcrypt.hash(defaultPassword, salt);
+          const newUser = await User.create({
+            email: targetEmail.toLowerCase().trim(),
+            password: hashedPassword,
+            plain_password: defaultPassword,
+            full_name: coord.name,
+            role: 'coordinator',
+            phone: coord.phone || 'Unavailable',
+            roll_number: coord.roll_number ? coord.roll_number.toUpperCase().trim() : undefined
+          });
+          console.log('[CREATE CLUB] Created User account:', newUser._id);
+        } else {
+          existingUser.role = 'coordinator';
+          existingUser.full_name = coord.name || existingUser.full_name;
+          existingUser.phone = coord.phone || existingUser.phone || 'Unavailable';
+          if (coord.roll_number) {
+            existingUser.roll_number = coord.roll_number.toUpperCase().trim();
+          }
+          if (coord.password && coord.password.trim() !== '') {
+            const salt = await bcrypt.genSalt(10);
+            existingUser.password = await bcrypt.hash(coord.password, salt);
+            existingUser.plain_password = coord.password;
+          }
+          await existingUser.save();
+          console.log('[CREATE CLUB] Updated existing User to coordinator:', existingUser._id);
         }
       }
     }
@@ -110,37 +130,54 @@ router.put('/edit/:clubId', authenticateToken, requireAdmin, async (req, res) =>
     // Create User documents for any new coordinators if password is provided
     if (coordinators && coordinators.length > 0) {
       for (const coord of coordinators) {
-        console.log('[EDIT CLUB] Checking coordinator:', coord.email, 'has password:', !!coord.password);
-        if (coord.email) {
-          const existingUser = await User.findOne({ email: coord.email.toLowerCase().trim() });
-          console.log('[EDIT CLUB] Existing user check:', coord.email, 'found:', !!existingUser);
-          if (!existingUser) {
-            if (coord.password) {
-              const salt = await bcrypt.genSalt(10);
-              const hashedPassword = await bcrypt.hash(coord.password, salt);
-              const newUser = await User.create({
-                email: coord.email.toLowerCase().trim(),
-                password: hashedPassword,
-                plain_password: coord.password,
-                full_name: coord.name,
-                role: 'coordinator',
-                phone: coord.phone || ''
-              });
-              console.log('[EDIT CLUB] Created User account:', newUser._id);
-            }
+        console.log('[EDIT CLUB] Checking coordinator:', coord.email);
+        
+        let existingUser = null;
+        if (coord.roll_number) {
+          existingUser = await User.findOne({ roll_number: coord.roll_number.toUpperCase().trim() });
+        }
+        if (!existingUser && coord.email && coord.email !== 'Unavailable' && coord.email.trim() !== '') {
+          existingUser = await User.findOne({ email: coord.email.toLowerCase().trim() });
+        }
+
+        let targetEmail = coord.email;
+        if (!targetEmail || targetEmail === 'Unavailable' || targetEmail.trim() === '') {
+          if (coord.roll_number) {
+            targetEmail = `${coord.roll_number.toLowerCase()}@psgitech.ac.in`;
           } else {
-            // Update existing user properties and set role to coordinator
-            existingUser.role = 'coordinator';
-            existingUser.full_name = coord.name || existingUser.full_name;
-            existingUser.phone = coord.phone !== undefined ? coord.phone : existingUser.phone;
-            if (coord.password && coord.password.trim() !== '') {
-              const salt = await bcrypt.genSalt(10);
-              existingUser.password = await bcrypt.hash(coord.password, salt);
-              existingUser.plain_password = coord.password;
-            }
-            await existingUser.save();
-            console.log('[EDIT CLUB] Updated existing User account to coordinator:', existingUser._id);
+            targetEmail = `placeholder-${Math.random().toString(36).substring(2, 9)}@placeholder.com`;
           }
+        }
+
+        if (!existingUser) {
+          const defaultPassword = coord.password || coord.roll_number || 'psgitech123';
+          const salt = await bcrypt.genSalt(10);
+          const hashedPassword = await bcrypt.hash(defaultPassword, salt);
+          const newUser = await User.create({
+            email: targetEmail.toLowerCase().trim(),
+            password: hashedPassword,
+            plain_password: defaultPassword,
+            full_name: coord.name,
+            role: 'coordinator',
+            phone: coord.phone || 'Unavailable',
+            roll_number: coord.roll_number ? coord.roll_number.toUpperCase().trim() : undefined
+          });
+          console.log('[EDIT CLUB] Created User account:', newUser._id);
+        } else {
+          // Update existing user properties and set role to coordinator
+          existingUser.role = 'coordinator';
+          existingUser.full_name = coord.name || existingUser.full_name;
+          existingUser.phone = coord.phone || existingUser.phone || 'Unavailable';
+          if (coord.roll_number) {
+            existingUser.roll_number = coord.roll_number.toUpperCase().trim();
+          }
+          if (coord.password && coord.password.trim() !== '') {
+            const salt = await bcrypt.genSalt(10);
+            existingUser.password = await bcrypt.hash(coord.password, salt);
+            existingUser.plain_password = coord.password;
+          }
+          await existingUser.save();
+          console.log('[EDIT CLUB] Updated existing User account to coordinator:', existingUser._id);
         }
       }
     }

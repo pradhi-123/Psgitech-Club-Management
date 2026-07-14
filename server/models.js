@@ -22,7 +22,8 @@ const ClubSchema = new mongoose.Schema({
   coordinators: [{
     name: String,
     phone: String,
-    email: String
+    email: String,
+    roll_number: String
   }],
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }

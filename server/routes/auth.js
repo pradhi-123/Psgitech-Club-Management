@@ -107,15 +107,35 @@ router.get('/users/coordinators', authenticateToken, requireAdmin, async (req, r
     const coordinators = await User.find({ role: 'coordinator' }).select('-password');
     const clubs = await Club.find({});
     res.json(coordinators.map(c => {
+      const cRoll = String(c.roll_number || '').toUpperCase().trim();
+      const cEmail = String(c.email || '').toLowerCase().trim();
+
       const assignedClub = clubs.find(club => 
-        club.coordinators?.some(coord => coord.email?.toLowerCase() === c.email?.toLowerCase())
+        club.coordinators?.some(coord => {
+          const coordRoll = String(coord.roll_number || '').toUpperCase().trim();
+          const coordEmail = String(coord.email || '').toLowerCase().trim();
+          return (coordRoll !== '' && coordRoll === cRoll) || (coordEmail !== '' && coordEmail === cEmail);
+        })
       );
+
+      const matchedCoord = assignedClub?.coordinators?.find(coord => {
+        const coordRoll = String(coord.roll_number || '').toUpperCase().trim();
+        const coordEmail = String(coord.email || '').toLowerCase().trim();
+        return (coordRoll !== '' && coordRoll === cRoll) || (coordEmail !== '' && coordEmail === cEmail);
+      });
+
+      const finalPhone = c.phone && c.phone !== 'Unavailable' ? c.phone : (matchedCoord?.phone || 'Unavailable');
+      const finalEmail = (!c.email || c.email.endsWith('@psgitech.ac.in') || c.email === 'Unavailable') 
+        ? (matchedCoord?.email && !matchedCoord.email.endsWith('@psgitech.ac.in') && matchedCoord.email !== 'Unavailable' ? matchedCoord.email : 'Unavailable') 
+        : c.email;
+
       return {
         id: c._id,
         full_name: c.full_name,
-        email: (!c.email || c.email.endsWith('@psgitech.ac.in') || c.email === 'Unavailable') ? 'Unavailable' : c.email,
-        phone: c.phone || 'Unavailable',
+        email: finalEmail,
+        phone: finalPhone,
         role: c.role,
+        roll_number: c.roll_number || matchedCoord?.roll_number || '',
         plain_password: c.plain_password || '',
         club_name: assignedClub ? assignedClub.name : 'Unassigned',
         club_id: assignedClub ? assignedClub._id : null
@@ -216,24 +236,65 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// PUT /api/auth/users/profile (Update profile details - Self functionality)
-router.put('/users/profile', authenticateToken, async (req, res) => {
+// PUT /api/auth/profile (Update profile details - Self functionality)
+router.put('/profile', authenticateToken, async (req, res) => {
   try {
     const { phone, email } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     
-    if (phone !== undefined) {
-      user.phone = phone.trim();
-    }
-    if (email !== undefined) {
-      const cleanedEmail = email.trim().toLowerCase();
-      if (cleanedEmail !== '' && cleanedEmail !== 'unavailable') {
-        user.email = cleanedEmail;
+    if (user.role === 'coordinator') {
+      const oldRoll = String(user.roll_number || '').toUpperCase().trim();
+      const oldEmail = String(user.email || '').toLowerCase().trim();
+
+      if (phone !== undefined) {
+        user.phone = phone.trim();
       }
+      if (email !== undefined) {
+        const cleanedEmail = email.trim().toLowerCase();
+        if (cleanedEmail !== '' && cleanedEmail !== 'unavailable') {
+          user.email = cleanedEmail;
+        }
+      }
+
+      await user.save();
+
+      // Sync in all clubs they belong to
+      const allClubs = await Club.find({});
+      for (const club of allClubs) {
+        let modified = false;
+        club.coordinators = (club.coordinators || []).map(c => {
+          const cRoll = String(c.roll_number || '').toUpperCase().trim();
+          const cEmail = String(c.email || '').toLowerCase().trim();
+          const isMatch = (cRoll !== '' && cRoll === oldRoll) || (cEmail !== '' && cEmail === oldEmail);
+          if (isMatch) {
+            modified = true;
+            return {
+              name: user.full_name,
+              phone: user.phone || 'Unavailable',
+              email: user.email || 'Unavailable',
+              roll_number: user.roll_number
+            };
+          }
+          return c;
+        });
+        if (modified) {
+          await club.save();
+        }
+      }
+    } else {
+      if (phone !== undefined) {
+        user.phone = phone.trim();
+      }
+      if (email !== undefined) {
+        const cleanedEmail = email.trim().toLowerCase();
+        if (cleanedEmail !== '' && cleanedEmail !== 'unavailable') {
+          user.email = cleanedEmail;
+        }
+      }
+      await user.save();
     }
     
-    await user.save();
     res.json({ message: 'Profile updated successfully', user });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Server error' });
@@ -242,11 +303,14 @@ router.put('/users/profile', authenticateToken, async (req, res) => {
 
 // PUT /api/users/:id (Update user - Admin functionality)
 router.put('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
-  const { full_name, email, roll_number, department, section, year, phone, password } = req.body;
+  const { full_name, email, roll_number, department, section, year, phone, password, club_id } = req.body;
 
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const oldRoll = String(user.roll_number || '').toUpperCase().trim();
+    const oldEmail = String(user.email || '').toLowerCase().trim();
 
     user.full_name = full_name || user.full_name;
     user.email = email ? email.toLowerCase().trim() : user.email;
@@ -263,6 +327,48 @@ router.put('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
     }
 
     await user.save();
+
+    if (user.role === 'coordinator') {
+      // 1. Remove coordinator from all clubs first
+      const allClubs = await Club.find({});
+      for (const club of allClubs) {
+        const initialLen = club.coordinators?.length || 0;
+        club.coordinators = (club.coordinators || []).filter(c => {
+          const cRoll = String(c.roll_number || '').toUpperCase().trim();
+          const cEmail = String(c.email || '').toLowerCase().trim();
+          const isMatch = (cRoll !== '' && cRoll === oldRoll) || (cEmail !== '' && cEmail === oldEmail);
+          return !isMatch;
+        });
+        if (club.coordinators.length !== initialLen) {
+          await club.save();
+        }
+      }
+
+      // 2. Add coordinator to the new club if assigned
+      if (club_id && club_id !== 'unassigned') {
+        const newClub = await Club.findById(club_id);
+        if (newClub) {
+          newClub.coordinators = newClub.coordinators || [];
+          const alreadyExists = newClub.coordinators.some(c => {
+            const cRoll = String(c.roll_number || '').toUpperCase().trim();
+            const cEmail = String(c.email || '').toLowerCase().trim();
+            const newRoll = String(user.roll_number || '').toUpperCase().trim();
+            const newEmail = String(user.email || '').toLowerCase().trim();
+            return (cRoll !== '' && cRoll === newRoll) || (cEmail !== '' && cEmail === newEmail);
+          });
+          if (!alreadyExists) {
+            newClub.coordinators.push({
+              name: user.full_name,
+              phone: user.phone || 'Unavailable',
+              email: user.email || 'Unavailable',
+              roll_number: user.roll_number
+            });
+            await newClub.save();
+          }
+        }
+      }
+    }
+
     res.json({ message: 'User updated successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Server error' });

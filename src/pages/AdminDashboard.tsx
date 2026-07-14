@@ -114,7 +114,7 @@ const AdminDashboard = () => {
   };
 
   const handleAddCoordinatorRow = () => {
-    setClubCoordinators([...clubCoordinators, { name: "", phone: "", email: "", password: "" }]);
+    setClubCoordinators([...clubCoordinators, { name: "", phone: "", email: "", password: "", roll_number: "" }]);
   };
 
   const handleRemoveCoordinatorRow = (index: number) => {
@@ -128,7 +128,7 @@ const AdminDashboard = () => {
   };
 
   const handleEditAddCoordinatorRow = () => {
-    setEditClubCoordinators([...editClubCoordinators, { name: "", phone: "", email: "", password: "" }]);
+    setEditClubCoordinators([...editClubCoordinators, { name: "", phone: "", email: "", password: "", roll_number: "" }]);
   };
 
   const handleEditRemoveCoordinatorRow = (index: number) => {
@@ -148,15 +148,19 @@ const AdminDashboard = () => {
     setEditClubForm({ name: club.name || "", description: club.description || "" });
     setEditClubCoordinators(club.coordinators && club.coordinators.length > 0 
       ? club.coordinators.map((c: any) => {
-          const coordUser = coordinators.find(user => user.email?.toLowerCase() === c.email?.toLowerCase());
+          const coordUser = coordinators.find(user => 
+            (user.email && user.email.toLowerCase() === c.email?.toLowerCase()) ||
+            (user.roll_number && user.roll_number.toUpperCase() === c.roll_number?.toUpperCase())
+          );
           return {
-            name: c.name || "",
-            phone: c.phone || "",
-            email: c.email || "",
-            password: coordUser?.plain_password || "astro123"
+            name: c.name || coordUser?.full_name || "",
+            phone: c.phone && c.phone !== 'Unavailable' ? c.phone : (coordUser?.phone && coordUser.phone !== 'Unavailable' ? coordUser.phone : ""),
+            email: c.email && c.email !== 'Unavailable' ? c.email : (coordUser?.email && coordUser.email !== 'Unavailable' ? coordUser.email : ""),
+            password: coordUser?.plain_password || "astro123",
+            roll_number: c.roll_number || coordUser?.roll_number || ""
           };
         })
-      : [{ name: "", phone: "", email: "", password: "" }]
+      : [{ name: "", phone: "", email: "", password: "", roll_number: "" }]
     );
     setIsEditClubDialogOpen(true);
   };
@@ -200,7 +204,7 @@ const AdminDashboard = () => {
       toast.success("Club added successfully!");
       setIsAddClubOpen(false);
       setClubForm({ name: "", description: "" });
-      setClubCoordinators([{ name: "", phone: "", email: "", password: "" }]);
+      setClubCoordinators([{ name: "", phone: "", email: "", password: "", roll_number: "" }]);
       setVisiblePasswords({});
       fetchData();
     } catch (error: any) {
@@ -495,6 +499,7 @@ const AdminDashboard = () => {
         year: editingUser.year,
         phone: editingUser.phone,
         password: editingUser.plain_password,
+        club_id: editingUser.club_id
       });
 
       toast.success("User updated successfully!");
@@ -753,12 +758,33 @@ const AdminDashboard = () => {
                                     </div>
                                   )}
                                 </div>
-                                {coord.name && (
-                                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 text-slate-500 border-t border-dashed mt-2">
-                                    <div><span className="font-semibold text-slate-600">Name:</span> {coord.name}</div>
-                                    <div><span className="font-semibold text-slate-600">Phone:</span> {coord.phone || "-"}</div>
-                                  </div>
-                                )}
+                                <div className="space-y-1 mt-2">
+                                  <Label className="text-xs">Coordinator Name *</Label>
+                                  <Input
+                                    value={coord.name || ""}
+                                    onChange={(e) => handleCoordinatorChange(index, 'name', e.target.value)}
+                                    placeholder="Enter Coordinator Name"
+                                    className="h-8 text-xs"
+                                  />
+                                </div>
+                                <div className="space-y-1 mt-2">
+                                  <Label className="text-xs">Phone Number</Label>
+                                  <Input
+                                    value={coord.phone === "Unavailable" ? "" : (coord.phone || "")}
+                                    onChange={(e) => handleCoordinatorChange(index, 'phone', e.target.value)}
+                                    placeholder="Enter Phone Number"
+                                    className="h-8 text-xs"
+                                  />
+                                </div>
+                                <div className="space-y-1 mt-2">
+                                  <Label className="text-xs">Email Address</Label>
+                                  <Input
+                                    value={coord.email === "Unavailable" ? "" : (coord.email || "")}
+                                    onChange={(e) => handleCoordinatorChange(index, 'email', e.target.value)}
+                                    placeholder="Enter Email Address"
+                                    className="h-8 text-xs"
+                                  />
+                                </div>
                                 <div className="space-y-1 mt-2">
                                   <Label className="text-xs">Set Password *</Label>
                                   <Input
@@ -870,14 +896,31 @@ const AdminDashboard = () => {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                               const inputRoll = e.target.value.toUpperCase();
                               const foundStudent = students.find(s => String(s.roll_number || '').toUpperCase().trim() === inputRoll.trim());
-                              if (foundStudent) {
+                              
+                              let foundClubCoord = null;
+                              let foundClubId = "";
+                              for (const club of clubs) {
+                                const matched = club.coordinators?.find(c => String(c.roll_number || '').toUpperCase().trim() === inputRoll.trim());
+                                if (matched) {
+                                  foundClubCoord = matched;
+                                  foundClubId = club.id;
+                                  break;
+                                }
+                              }
+
+                              if (foundStudent || foundClubCoord) {
+                                const matchedName = foundStudent?.full_name || foundClubCoord?.name || "";
+                                const matchedPhone = foundStudent?.phone || foundClubCoord?.phone || "";
+                                const matchedEmail = foundStudent?.email || foundClubCoord?.email || `${inputRoll.toLowerCase()}@psgitech.ac.in`;
+
                                 setCoordinatorForm({
                                   ...coordinatorForm,
                                   roll_number: inputRoll,
-                                  full_name: foundStudent.full_name,
-                                  phone: foundStudent.phone || "",
-                                  email: foundStudent.email || `${inputRoll.toLowerCase()}@psgitech.ac.in`,
-                                  password: coordinatorForm.password || foundStudent.plain_password || foundStudent.roll_number || ""
+                                  full_name: matchedName,
+                                  phone: matchedPhone === "Unavailable" ? "" : matchedPhone,
+                                  email: matchedEmail === "Unavailable" ? "" : matchedEmail,
+                                  club_id: foundClubId || coordinatorForm.club_id,
+                                  password: coordinatorForm.password || foundStudent?.plain_password || foundStudent?.roll_number || ""
                                 });
                               } else {
                                 setCoordinatorForm({
@@ -904,12 +947,27 @@ const AdminDashboard = () => {
                                     key={s.id || s._id}
                                     className="p-2 hover:bg-slate-50 cursor-pointer flex justify-between bg-white text-slate-800"
                                     onMouseDown={() => {
+                                      let foundClubCoord = null;
+                                      let foundClubId = "";
+                                      for (const club of clubs) {
+                                        const matched = club.coordinators?.find(c => String(c.roll_number || '').toUpperCase().trim() === String(s.roll_number || '').toUpperCase().trim());
+                                        if (matched) {
+                                          foundClubCoord = matched;
+                                          foundClubId = club.id;
+                                          break;
+                                        }
+                                      }
+
+                                      const matchedPhone = s.phone || foundClubCoord?.phone || "";
+                                      const matchedEmail = s.email || foundClubCoord?.email || "";
+
                                       setCoordinatorForm({
                                         ...coordinatorForm,
                                         roll_number: s.roll_number,
                                         full_name: s.full_name,
-                                        phone: s.phone || "",
-                                        email: s.email,
+                                        phone: matchedPhone === "Unavailable" ? "" : matchedPhone,
+                                        email: matchedEmail === "Unavailable" ? "" : matchedEmail,
+                                        club_id: foundClubId || coordinatorForm.club_id,
                                         password: s.plain_password || s.roll_number || ""
                                       });
                                     }}
@@ -941,6 +999,17 @@ const AdminDashboard = () => {
                               setCoordinatorForm({ ...coordinatorForm, phone: e.target.value })
                             }
                             placeholder="Enter phone number (optional)"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Email Address</Label>
+                          <Input
+                            type="email"
+                            value={coordinatorForm.email || ""}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              setCoordinatorForm({ ...coordinatorForm, email: e.target.value })
+                            }
+                            placeholder="Enter email address (optional)"
                           />
                         </div>
                         <div className="space-y-2">
@@ -1417,6 +1486,16 @@ const AdminDashboard = () => {
               {editingUser.role === "coordinator" && (
                 <>
                   <div className="space-y-2">
+                    <Label>Roll Number</Label>
+                    <Input
+                      value={editingUser.roll_number || ""}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setEditingUser({ ...editingUser, roll_number: e.target.value.toUpperCase() })
+                      }
+                      placeholder="Enter student roll number"
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label>Phone Number</Label>
                     <Input
                       value={editingUser.phone === "Unavailable" ? "" : (editingUser.phone || "")}
@@ -1425,6 +1504,27 @@ const AdminDashboard = () => {
                       }
                       placeholder="Enter phone number"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Assign to Club</Label>
+                    <Select
+                      value={editingUser.club_id || "unassigned"}
+                      onValueChange={(value: string) =>
+                        setEditingUser({ ...editingUser, club_id: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select club" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {clubs.map((club) => (
+                          <SelectItem key={club.id} value={club.id}>
+                            {club.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Password</Label>
@@ -1575,12 +1675,33 @@ const AdminDashboard = () => {
                         </div>
                       )}
                     </div>
-                    {coord.name && (
-                      <div className="grid grid-cols-2 gap-2 text-xs pt-1 text-slate-500 border-t border-dashed mt-2">
-                        <div><span className="font-semibold text-slate-600">Name:</span> {coord.name}</div>
-                        <div><span className="font-semibold text-slate-600">Phone:</span> {coord.phone || "-"}</div>
-                      </div>
-                    )}
+                    <div className="space-y-1 mt-2">
+                      <Label className="text-xs">Coordinator Name *</Label>
+                      <Input
+                        value={coord.name || ""}
+                        onChange={(e) => handleEditCoordinatorChange(index, 'name', e.target.value)}
+                        placeholder="Enter Coordinator Name"
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1 mt-2">
+                      <Label className="text-xs">Phone Number</Label>
+                      <Input
+                        value={coord.phone === "Unavailable" ? "" : (coord.phone || "")}
+                        onChange={(e) => handleEditCoordinatorChange(index, 'phone', e.target.value)}
+                        placeholder="Enter Phone Number"
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1 mt-2">
+                      <Label className="text-xs">Email Address</Label>
+                      <Input
+                        value={coord.email === "Unavailable" ? "" : (coord.email || "")}
+                        onChange={(e) => handleEditCoordinatorChange(index, 'email', e.target.value)}
+                        placeholder="Enter Email Address"
+                        className="h-8 text-xs"
+                      />
+                    </div>
                     <div className="space-y-1 mt-2">
                       <Label className="text-xs">Set Password *</Label>
                       <Input
